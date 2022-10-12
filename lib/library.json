@@ -1,0 +1,19 @@
+{
+    "name": "micro-zxing",
+    "version": "1.0.0",
+    "description": "",
+    "keywords": "",
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "authors": [
+        {
+            "name": "Rene Zeldenthuis",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "frameworks": "*",
+    "platforms": "*"
+}

@@ -1,0 +1,44 @@
+A simple, standalone, BSD-3-Clause C library for converting UTF-8 to/from Extended Channel Interpretations, as
+defined by AIM ITS/04-023 International Technical Standard - Extended Channel Interpretations Part 3: Register
+(Version 2, February 2022).
+
+Can also be used by placing "zueci.c" and its 9 include files in a directory and adding "zueci.c" to the project.
+It has no dependencies.
+
+Four API functions are defined, two for converting from/to UTF-8, and two for determining ECI/UTF-8 output buffer
+sizes. See "zueci.h" for details.
+
+To build the library download the source tarball or clone the project:
+
+	git clone https://git.code.sf.net/p/libzueci/code libzueci
+	cd libzueci
+
+To build on Unix (Linux, macOS)
+
+    mkdir build
+    cd build
+    cmake ..
+    make
+    sudo make install
+
+To build on Windows
+
+    cmake -G "Visual Studio 16 2019" -B build
+    cd build
+    cmake --build . --config Release
+
+A number of CMake options are available, all OFF by default:
+
+    ZUECI_DEBUG      "Set debug compile flags"
+    ZUECI_NOOPT      "Set no optimize compile flags"
+    ZUECI_SANITIZE   "Set sanitize compile/link flags"
+    ZUECI_TEST       "Set test compile flag"
+    ZUECI_TEST_ICONV "Use libiconv when testing"
+    ZUECI_COVERAGE   "Set code coverage flags"
+    ZUECI_STATIC     "Build static library"
+
+which can be set by doing e.g.
+
+    cmake -DZUECI_SANITIZE=ON ..
+
+For details on ZUECI_TEST and building the tests, see "tests/README".
