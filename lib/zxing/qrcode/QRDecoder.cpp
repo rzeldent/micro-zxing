@@ -6,6 +6,9 @@
 
 #include "QRDecoder.h"
 
+#ifdef ZXING_EXPERIMENTAL_API
+#include "Barcode.h"
+#endif
 #include "BitMatrix.h"
 #include "BitSource.h"
 #include "CharacterSet.h"
@@ -73,8 +76,8 @@ static void DecodeHanziSegment(BitSource& bits, int count, Content& result)
 			// In the 0xB0A1 to 0xFAFE range
 			assembledTwoBytes += 0x0A6A1;
 		}
-		result += narrow_cast<uint8_t>((assembledTwoBytes >> 8) & 0xFF);
-		result += narrow_cast<uint8_t>(assembledTwoBytes & 0xFF);
+		result.push_back((assembledTwoBytes >> 8) & 0xFF);
+		result.push_back(assembledTwoBytes & 0xFF);
 		count--;
 	}
 }
@@ -97,8 +100,8 @@ static void DecodeKanjiSegment(BitSource& bits, int count, Content& result)
 			// In the 0xE040 to 0xEBBF range
 			assembledTwoBytes += 0x0C140;
 		}
-		result += narrow_cast<uint8_t>(assembledTwoBytes >> 8);
-		result += narrow_cast<uint8_t>(assembledTwoBytes);
+		result.push_back(assembledTwoBytes >> 8);
+		result.push_back(assembledTwoBytes);
 		count--;
 	}
 }
@@ -109,7 +112,7 @@ static void DecodeByteSegment(BitSource& bits, int count, Content& result)
 	result.reserve(count);
 
 	for (int i = 0; i < count; i++)
-		result += narrow_cast<uint8_t>(bits.readBits(8));
+		result.push_back(bits.readBits(8));
 }
 
 static char ToAlphaNumericChar(int value)
@@ -117,17 +120,14 @@ static char ToAlphaNumericChar(int value)
 	/**
 	* See ISO 18004:2006, 6.4.4 Table 5
 	*/
-	static const char ALPHANUMERIC_CHARS[] = {
+	constexpr std::array ALPHANUMERIC_CHARS = {
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
 		'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
 		'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 		' ', '$', '%', '*', '+', '-', '.', '/', ':'
 	};
 
-	if (value < 0 || value >= Size(ALPHANUMERIC_CHARS))
-		throw std::out_of_range("ToAlphaNumericChar: out of range");
-
-	return ALPHANUMERIC_CHARS[value];
+	return ALPHANUMERIC_CHARS.at(value);
 }
 
 static void DecodeAlphanumericSegment(BitSource& bits, int count, Content& result)
@@ -147,21 +147,21 @@ static void DecodeAlphanumericSegment(BitSource& bits, int count, Content& resul
 	// See section 6.4.8.1, 6.4.8.2
 	if (result.symbology.aiFlag != AIFlag::None) {
 		// We need to massage the result a bit if in an FNC1 mode:
-		for (size_t i = 0; i < buffer.length(); i++) {
-			if (buffer[i] == '%') {
-				if (i < buffer.length() - 1 && buffer[i + 1] == '%') {
+		for (auto i = buffer.begin(); i != buffer.end(); i++) {
+			if (*i == '%') {
+				if (i + 1 != buffer.end() && *(i + 1) == '%') {
 					// %% is rendered as %
-					buffer.erase(i + 1);
+					i = buffer.erase(i);
 				} else {
 					// In alpha mode, % should be converted to FNC1 separator 0x1D
-					buffer[i] = static_cast<char>(0x1D);
+					*i = static_cast<char>(0x1D);
 				}
 			}
 		}
 	}
 
 	result.switchEncoding(CharacterSet::ISO8859_1);
-	result += buffer;
+	result.append(buffer);
 }
 
 static void DecodeNumericSegment(BitSource& bits, int count, Content& result)
@@ -209,7 +209,7 @@ static ECI ParseECIValue(BitSource& bits)
  * a terminator code.  If true, then the decoding can finish. If false, then the decoding
  * can read off the next mode code.
  *
- * See ISO 18004:2006, 6.4.1 Table 2
+ * See ISO 18004:2015, 7.4.1 Table 2
  *
  * @param bits the stream of bits that might have a terminator code
  * @param version the QR or micro QR code version
@@ -233,9 +233,12 @@ DecoderResult DecodeBitStream(ByteArray&& bytes, const Version& version, ErrorCo
 	BitSource bits(bytes);
 	Content result;
 	Error error;
-	result.symbology = {'Q', '1', 1};
+	result.symbology = {'Q', version.isModel1() ? '0' : '1', 1};
 	StructuredAppendInfo structuredAppend;
 	const int modeBitLength = CodecModeBitsLength(version);
+
+	if (version.isModel1())
+		bits.readBits(4); // Model 1 is leading with 4 0-bits -> drop them
 
 	try
 	{
@@ -244,7 +247,7 @@ DecoderResult DecodeBitStream(ByteArray&& bytes, const Version& version, ErrorCo
 			if (modeBitLength == 0)
 				mode = CodecMode::NUMERIC; // MicroQRCode version 1 is always NUMERIC and modeBitLength is 0
 			else
-				mode = CodecModeForBits(bits.readBits(modeBitLength), version.isMicroQRCode());
+				mode = CodecModeForBits(bits.readBits(modeBitLength), version.type());
 
 			switch (mode) {
 			case CodecMode::FNC1_FIRST_POSITION:
@@ -259,9 +262,9 @@ DecoderResult DecodeBitStream(ByteArray&& bytes, const Version& version, ErrorCo
 				result.symbology.modifier = '5'; // As above
 				// ISO/IEC 18004:2015 7.4.8.3 AIM Application Indicator (FNC1 in second position), "00-99" or "A-Za-z"
 				if (int appInd = bits.readBits(8); appInd < 100) // "00-09"
-					result += ZXing::ToString(appInd, 2);
+					result.append(ZXing::ToString(appInd, 2));
 				else if ((appInd >= 165 && appInd <= 190) || (appInd >= 197 && appInd <= 222)) // "A-Za-z"
-					result += narrow_cast<uint8_t>(appInd - 100);
+					result.push_back(appInd - 100);
 				else
 					throw FormatError("Invalid AIM Application Indicator");
 				result.symbology.aiFlag = AIFlag::AIM; // see also above
@@ -274,6 +277,8 @@ DecoderResult DecodeBitStream(ByteArray&& bytes, const Version& version, ErrorCo
 				structuredAppend.id    = std::to_string(bits.readBits(8));
 				break;
 			case CodecMode::ECI:
+				if (version.isModel1())
+					throw FormatError("QRCode Model 1 does not support ECI");
 				// Count doesn't apply to ECI
 				result.switchEncoding(ParseECIValue(bits));
 				break;
@@ -301,7 +306,7 @@ DecoderResult DecodeBitStream(ByteArray&& bytes, const Version& version, ErrorCo
 			}
 			}
 		}
-	} catch (std::out_of_range& e) { // see BitSource::readBits
+	} catch (std::out_of_range&) { // see BitSource::readBits
 		error = FormatError("Truncated bit stream");
 	} catch (Error e) {
 		error = std::move(e);
@@ -316,14 +321,18 @@ DecoderResult DecodeBitStream(ByteArray&& bytes, const Version& version, ErrorCo
 
 DecoderResult Decode(const BitMatrix& bits)
 {
-	const Version* pversion = ReadVersion(bits);
+	if (!Version::HasValidSize(bits))
+		return FormatError("Invalid symbol size");
+
+	auto formatInfo = ReadFormatInformation(bits);
+	if (!formatInfo.isValid())
+		return FormatError("Invalid format information");
+
+	const Version* pversion = ReadVersion(bits, formatInfo.type());
 	if (!pversion)
 		return FormatError("Invalid version");
-	const Version& version = *pversion;
 
-	auto formatInfo = ReadFormatInformation(bits, version.isMicroQRCode());
-	if (!formatInfo.isValid())
-		return FormatError("Invalid format informatino");
+	const Version& version = *pversion;
 
 	// Read codewords
 	ByteArray codewords = ReadCodewords(bits, version, formatInfo);
@@ -337,24 +346,37 @@ DecoderResult Decode(const BitMatrix& bits)
 
 	// Count total number of data bytes
 	const auto op = [](auto totalBytes, const auto& dataBlock){ return totalBytes + dataBlock.numDataCodewords();};
-	const auto totalBytes = std::accumulate(std::begin(dataBlocks), std::end(dataBlocks), int{}, op);
+	const auto totalBytes = Reduce(dataBlocks, int{}, op);
 	ByteArray resultBytes(totalBytes);
 	auto resultIterator = resultBytes.begin();
 
 	// Error-correct and copy data blocks together into a stream of bytes
+	Error error;
 	for (auto& dataBlock : dataBlocks)
 	{
 		ByteArray& codewordBytes = dataBlock.codewords();
 		int numDataCodewords = dataBlock.numDataCodewords();
 
 		if (!CorrectErrors(codewordBytes, numDataCodewords))
-			return ChecksumError();
+			error = ChecksumError();
 
 		resultIterator = std::copy_n(codewordBytes.begin(), numDataCodewords, resultIterator);
 	}
 
+	auto versionStr = version.isRMQR() ? "R" + ToString(Version::SymbolSize(version.versionNumber(), version.type()), true)
+									   : (version.isMicro() ? "M" : "") + std::to_string(version.versionNumber());
+
 	// Decode the contents of that stream of bytes
-	return DecodeBitStream(std::move(resultBytes), version, formatInfo.ecLevel).setIsMirrored(formatInfo.isMirrored);
+	auto ret = DecodeBitStream(std::move(resultBytes), version, formatInfo.ecLevel)
+		.setIsMirrored(formatInfo.isMirrored)
+#ifdef ZXING_EXPERIMENTAL_API
+		.addExtra(BarcodeExtra::DataMask, formatInfo.dataMask, uint8_t(255))
+		.addExtra(BarcodeExtra::Version, versionStr)
+#endif
+		;
+	if (error)
+		ret.setError(error);
+	return ret;
 }
 
 } // namespace ZXing::QRCode

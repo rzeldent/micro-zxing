@@ -9,10 +9,13 @@
 
 #include "BarcodeFormat.h"
 #include "BitArray.h"
-#include "DecodeHints.h"
+#include "ReaderOptions.h"
 #include "GTIN.h"
 #include "ODUPCEANCommon.h"
-#include "Result.h"
+#include "Barcode.h"
+#include "JSON.h"
+
+#include <cmath>
 
 namespace ZXing::OneD {
 
@@ -32,7 +35,8 @@ static const int FIRST_DIGIT_ENCODINGS[] = {0x00, 0x0B, 0x0D, 0x0E, 0x13, 0x19, 
 // QZ R:    7   |   7   |   9   |   7   |        5   |        5
 
 constexpr float QUIET_ZONE_LEFT = 6;
-constexpr float QUIET_ZONE_RIGHT = 6;
+constexpr float QUIET_ZONE_RIGHT_EAN = 3; // used to be 6, see #526 and #558
+constexpr float QUIET_ZONE_RIGHT_UPC = 6;
 constexpr float QUIET_ZONE_ADDON = 3;
 
 // There is a single sample (ean13-1/12.png) that fails to decode with these (new) settings because
@@ -67,7 +71,7 @@ static bool DecodeDigit(const PatternView& view, std::string& txt, int* lgPatter
 
 	// clang-format off
 /* pattern now contains the central 5 bits of the L/G/R code
- * L/G-codes always wart with 1 and end with 0, R-codes are simply
+ * L/G-codes always start with 1 and end with 0, R-codes are simply
  * inverted L-codes.
 
 		L-Code  G-Code  R-Code
@@ -129,7 +133,7 @@ static bool EAN13(PartialResult& res, PatternView begin)
 	auto mid = begin.subView(27, MID_PATTERN.size());
 	auto end = begin.subView(56, END_PATTERN.size());
 
-	CHECK(end.isValid() && IsRightGuard(end, END_PATTERN, QUIET_ZONE_RIGHT) && IsPattern(mid, MID_PATTERN));
+	CHECK(end.isValid() && IsRightGuard(end, END_PATTERN, QUIET_ZONE_RIGHT_EAN) && IsPattern(mid, MID_PATTERN));
 
 	auto next = begin.subView(END_PATTERN.size(), CHAR_LEN);
 	res.txt = " "; // make space for lgPattern character
@@ -161,7 +165,7 @@ static bool EAN8(PartialResult& res, PatternView begin)
 	auto mid = begin.subView(19, MID_PATTERN.size());
 	auto end = begin.subView(40, END_PATTERN.size());
 
-	CHECK(end.isValid() && IsRightGuard(end, END_PATTERN, QUIET_ZONE_RIGHT) && IsPattern(mid, MID_PATTERN));
+	CHECK(end.isValid() && IsRightGuard(end, END_PATTERN, QUIET_ZONE_RIGHT_EAN) && IsPattern(mid, MID_PATTERN));
 
 	// additional plausibility check for the module size: it has to be about the same for both
 	// the guard patterns and the payload/data part.
@@ -188,7 +192,7 @@ static bool UPCE(PartialResult& res, PatternView begin)
 {
 	auto end = begin.subView(27, UPCE_END_PATTERN.size());
 
-	CHECK(end.isValid() && IsRightGuard(end, UPCE_END_PATTERN, QUIET_ZONE_RIGHT));
+	CHECK(end.isValid() && IsRightGuard(end, UPCE_END_PATTERN, QUIET_ZONE_RIGHT_UPC));
 
 	// additional plausibility check for the module size: it has to be about the same for both
 	// the guard patterns and the payload/data part. This speeds up the falsepositives use case
@@ -259,7 +263,7 @@ static bool AddOn(PartialResult& res, PatternView begin, int digitCount)
 	return true;
 }
 
-Result MultiUPCEANReader::decodePattern(int rowNumber, PatternView& next, std::unique_ptr<RowReader::DecodingState>&) const
+Barcode MultiUPCEANReader::decodePattern(int rowNumber, PatternView& next, std::unique_ptr<RowReader::DecodingState>&) const
 {
 	const int minSize = 3 + 6*4 + 6; // UPC-E
 
@@ -269,48 +273,56 @@ Result MultiUPCEANReader::decodePattern(int rowNumber, PatternView& next, std::u
 
 	PartialResult res;
 	auto begin = next;
-
-	if (!(((_hints.hasFormat(BarcodeFormat::EAN13 | BarcodeFormat::UPCA)) && EAN13(res, begin)) ||
-		  (_hints.hasFormat(BarcodeFormat::EAN8) && EAN8(res, begin)) ||
-		  (_hints.hasFormat(BarcodeFormat::UPCE) && UPCE(res, begin))))
+	
+	if (!(((_opts.hasFormat(BarcodeFormat::EAN13 | BarcodeFormat::UPCA)) && EAN13(res, begin)) ||
+		  (_opts.hasFormat(BarcodeFormat::EAN8) && EAN8(res, begin)) ||
+		  (_opts.hasFormat(BarcodeFormat::UPCE) && UPCE(res, begin))))
 		return {};
 
-	Error error;
-	if (!GTIN::IsCheckDigitValid(res.format == BarcodeFormat::UPCE ? UPCEANCommon::ConvertUPCEtoUPCA(res.txt) : res.txt))
-		error = ChecksumError();
+	// ISO/IEC 15420:2009 (& GS1 General Specifications 5.1.3) states that the content for "]E0" should be 13 digits,
+	// i.e. converted to EAN-13 if UPC-A/E
+	std::string upceTxt;
+	if (res.format == BarcodeFormat::UPCE) {
+		upceTxt = res.txt;
+		res.txt = "0" + UPCEANCommon::ConvertUPCEtoUPCA(res.txt);
+	}
 
-	// If UPC-A was a requested format and we detected a EAN-13 code with a leading '0', then we drop the '0' and call it
-	// a UPC-A code.
-	// TODO: this is questionable
-	if (_hints.hasFormat(BarcodeFormat::UPCA) && res.format == BarcodeFormat::EAN13 && res.txt.front() == '0') {
-		res.txt = res.txt.substr(1);
-		res.format = BarcodeFormat::UPCA;
+	Error error = !GTIN::IsCheckDigitValid(res.txt) ? ChecksumError() : Error();
+
+	// if we explicitly excluded EAN13, don't return an EAN13 symbol
+	if (res.format == BarcodeFormat::EAN13 && !_opts.hasFormat(BarcodeFormat::EAN13)) {
+		if (res.txt.front() == '0')
+			res.format = BarcodeFormat::UPCA;
+		else
+			return {};
 	}
 
 	// Symbology identifier modifiers ISO/IEC 15420:2009 Annex B Table B.1
-	// ISO/IEC 15420:2009 (& GS1 General Specifications 5.1.3) states that the content for "]E0" should be 13 digits,
-	// i.e. converted to EAN-13 if UPC-A/E, but not doing this here to maintain backward compatibility
 	SymbologyIdentifier symbologyIdentifier = {'E', res.format == BarcodeFormat::EAN8 ? '4' : '0'};
-
-	auto ext = res.end;
-	PartialResult addOnRes;
-	if (_hints.eanAddOnSymbol() != EanAddOnSymbol::Ignore && ext.skipSymbol() && ext.skipSingle(static_cast<int>(begin.sum() * 3.5))
-		&& (AddOn(addOnRes, ext, 5) || AddOn(addOnRes, ext, 2))) {
-		// ISO/IEC 15420:2009 states that the content for "]E3" should be 15 or 18 digits, i.e. converted to EAN-13
-		// and extended with no separator, and that the content for "]E4" should be 8 digits, i.e. no add-on
-		//TODO: extend position in include extension
-		res.txt += " " + addOnRes.txt;
-
-		if (res.format != BarcodeFormat::EAN8) // Keeping EAN-8 with add-on as "]E4"
-			symbologyIdentifier.modifier = '3'; // Combined packet, EAN-13, UPC-A, UPC-E, with add-on
-	}
 
 	next = res.end;
 
-	if (_hints.eanAddOnSymbol() == EanAddOnSymbol::Require && !addOnRes.isValid())
+	auto ext = res.end;
+	PartialResult addOnRes;
+	if (_opts.eanAddOnSymbol() != EanAddOnSymbol::Ignore && ext.skipSymbol()
+		&& ext.skipSingle(static_cast<int>(begin.sum() * 3.5)) && (AddOn(addOnRes, ext, 5) || AddOn(addOnRes, ext, 2))) {
+		res.txt += addOnRes.txt;
+		next = addOnRes.end;
+		// ISO/IEC 15420:2009 states that the content for "]E3" should be 15 or 18 digits, i.e. converted to EAN-13
+		// and extended with no separator, and that the content for "]E4" should be 8 digits, i.e. no add-on
+		// @gitlost and @axxel decided to extend the spec here to simply add an EAN-8 + add-on option
+		symbologyIdentifier.modifier = '3'; // Combined packet, EAN-13, UPC-A, UPC-E, with add-on
+	}
+
+	if (_opts.eanAddOnSymbol() == EanAddOnSymbol::Require && !addOnRes.isValid())
 		return {};
 
-	return Result(res.txt, rowNumber, begin.pixelsInFront(), res.end.pixelsTillEnd(), res.format, symbologyIdentifier, error);
+	return Barcode(res.txt, rowNumber, begin.pixelsInFront(), next.pixelsTillEnd(), res.format, symbologyIdentifier, error)
+#ifdef ZXING_EXPERIMENTAL_API
+		.addExtra(JsonProp(BarcodeExtra::UPCE, upceTxt))
+		.addExtra(JsonProp(BarcodeExtra::EanAddOn, addOnRes.txt))
+#endif
+		;
 }
 
 } // namespace ZXing::OneD

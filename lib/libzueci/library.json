@@ -1,5 +1,0 @@
-{
-    "name": "libzueci",
-    "version": "1.0.0",
-    "description": "Simple, standalone, BSD-3-Clause C library for converting UTF-8 to/from Extended Channel Interpretations",
-}

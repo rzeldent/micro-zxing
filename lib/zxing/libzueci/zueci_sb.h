@@ -30,6 +30,7 @@ static const zueci_u16 zueci_cp437_u_u[128] = { /* Unicode codepoints sorted */
     0x2566, 0x2567, 0x2568, 0x2569, 0x256A, 0x256B, 0x256C, 0x2580,
     0x2584, 0x2588, 0x258C, 0x2590, 0x2591, 0x2592, 0x2593, 0x25A0,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_cp437_u_sb[128] = { /* Single-byte in Unicode order */
     0xFF,   0xAD,   0x9B,   0x9C,   0x9D,   0xA6,   0xAE,   0xAA,
     0xF8,   0xF1,   0xFD,   0xE6,   0xFA,   0xA7,   0xAF,   0xAC,
@@ -48,6 +49,8 @@ static const unsigned char zueci_cp437_u_sb[128] = { /* Single-byte in Unicode o
     0xCB,   0xCF,   0xD0,   0xCA,   0xD8,   0xD7,   0xCE,   0xDF,
     0xDC,   0xDB,   0xDD,   0xDE,   0xB0,   0xB1,   0xB2,   0xFE,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_cp437_sb_u[128] = { /* Single-byte sorted indexes into Unicode table */
       21,     51,     35,     29,     30,     27,     31,     33,
       36,     37,     34,     41,     40,     38,     18,     19,
@@ -66,14 +69,18 @@ static const char zueci_cp437_sb_u[128] = { /* Single-byte sorted indexes into U
       73,      9,     75,     74,     77,     78,     47,     72,
        8,     68,     12,     69,     66,     10,    127,      0,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Forward reference to base Unicode to ISO/IEC 8859 routine - see "zueci.c" */
 static int zueci_u_iso8859(const zueci_u32 u, const zueci_u16 *tab_s, const zueci_u16 *tab_u_u,
             const unsigned char *tab_u_sb, int e, unsigned char *dest);
-
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Forward reference to base ISO/IEC 8859 to Unicode routine - see "zueci.c" */
 static int zueci_iso8859_u(const unsigned char c, const unsigned int flags, const zueci_u16 *tab_s,
             const zueci_u16 *tab_u_u, const char *tab_sb_u, const int c2_max, zueci_u32 *p_u);
+#endif
 
 /* Tables for ECI 4 ISO/IEC 8859-2 */
 static const zueci_u16 zueci_iso8859_2_s[6] = { /* Straight-thru bit-flags */
@@ -89,6 +96,7 @@ static const zueci_u16 zueci_iso8859_2_u_u[57] = { /* Unicode codepoints sorted 
     0x017B, 0x017C, 0x017D, 0x017E, 0x02C7, 0x02D8, 0x02D9, 0x02DB,
     0x02DD,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_2_u_sb[57] = { /* Single-byte in Unicode order */
     0xC3,   0xE3,   0xA1,   0xB1,   0xC6,   0xE6,   0xC8,   0xE8,
     0xCF,   0xEF,   0xD0,   0xF0,   0xCA,   0xEA,   0xCC,   0xEC,
@@ -99,6 +107,8 @@ static const unsigned char zueci_iso8859_2_u_sb[57] = { /* Single-byte in Unicod
     0xAF,   0xBF,   0xAE,   0xBE,   0xB7,   0xA2,   0xFF,   0xB2,
     0xBD,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_2_sb_u[96] = { /* Single-byte sorted indexes into Unicode table */
       -1,      2,     53,     20,     -1,     18,     32,     -1,
       -1,     36,     34,     40,     46,     -1,     50,     48,
@@ -113,18 +123,23 @@ static const char zueci_iso8859_2_sb_u[96] = { /* Single-byte sorted indexes int
       11,     23,     25,     -1,     -1,     27,     -1,     -1,
       31,     43,     -1,     45,     -1,     -1,     39,     54,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 4 ISO/IEC 8859-2 Latin alphabet No. 2 (Latin-2) */
 static int zueci_u_iso8859_2(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_2_s, zueci_iso8859_2_u_u, zueci_iso8859_2_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_2_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_2_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_2_s, zueci_iso8859_2_u_u, zueci_iso8859_2_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_2_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 5 ISO/IEC 8859-3 */
 static const zueci_u16 zueci_iso8859_3_s[6] = { /* Straight-thru bit-flags */
@@ -136,12 +151,15 @@ static const zueci_u16 zueci_iso8859_3_u_u[28] = { /* Unicode codepoints sorted 
     0x0134, 0x0135, 0x015C, 0x015D, 0x015E, 0x015F, 0x016C, 0x016D,
     0x017B, 0x017C, 0x02D8, 0x02D9,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_3_u_sb[28] = { /* Single-byte in Unicode order */
     0xC6,   0xE6,   0xC5,   0xE5,   0xD8,   0xF8,   0xAB,   0xBB,
     0xD5,   0xF5,   0xA6,   0xB6,   0xA1,   0xB1,   0xA9,   0xB9,
     0xAC,   0xBC,   0xDE,   0xFE,   0xAA,   0xBA,   0xDD,   0xFD,
     0xAF,   0xBF,   0xA2,   0xFF,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_3_sb_u[96] = { /* Single-byte sorted indexes into Unicode table */
       -1,     12,     26,     -1,     -1,     -1,     10,     -1,
       -1,     14,     20,      6,     16,     -1,     -1,     24,
@@ -156,18 +174,23 @@ static const char zueci_iso8859_3_sb_u[96] = { /* Single-byte sorted indexes int
       -1,     -1,     -1,     -1,     -1,      9,     -1,     -1,
        5,     -1,     -1,     -1,     -1,     23,     19,     27,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 5 ISO/IEC 8859-3 Latin alphabet No. 3 (Latin-3) (South European) */
 static int zueci_u_iso8859_3(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_3_s, zueci_iso8859_3_u_u, zueci_iso8859_3_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_3_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_3_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_3_s, zueci_iso8859_3_u_u, zueci_iso8859_3_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_3_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 6 ISO/IEC 8859-4 */
 static const zueci_u16 zueci_iso8859_4_s[6] = { /* Straight-thru bit-flags */
@@ -182,6 +205,7 @@ static const zueci_u16 zueci_iso8859_4_u_u[50] = { /* Unicode codepoints sorted 
     0x0169, 0x016A, 0x016B, 0x0172, 0x0173, 0x017D, 0x017E, 0x02C7,
     0x02D9, 0x02DB,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_4_u_sb[50] = { /* Single-byte in Unicode order */
     0xC0,   0xE0,   0xA1,   0xB1,   0xC8,   0xE8,   0xD0,   0xF0,
     0xAA,   0xBA,   0xCC,   0xEC,   0xCA,   0xEA,   0xAB,   0xBB,
@@ -191,6 +215,8 @@ static const unsigned char zueci_iso8859_4_u_sb[50] = { /* Single-byte in Unicod
     0xFD,   0xDE,   0xFE,   0xD9,   0xF9,   0xAE,   0xBE,   0xB7,
     0xFF,   0xB2,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_4_sb_u[96] = { /* Single-byte sorted indexes into Unicode table */
       -1,      2,     24,     33,     -1,     16,     25,     -1,
       -1,     35,      8,     14,     37,     -1,     45,     -1,
@@ -205,18 +231,23 @@ static const char zueci_iso8859_4_sb_u[96] = { /* Single-byte sorted indexes int
        7,     28,     32,     23,     -1,     -1,     -1,     -1,
       -1,     44,     -1,     -1,     -1,     40,     42,     48,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 6 ISO/IEC 8859-4 Latin alphabet No. 4 (Latin-4) (North European) */
 static int zueci_u_iso8859_4(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_4_s, zueci_iso8859_4_u_u, zueci_iso8859_4_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_4_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_4_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_4_s, zueci_iso8859_4_u_u, zueci_iso8859_4_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_4_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 7 ISO/IEC 8859-5 */
 static const zueci_u16 zueci_iso8859_5_s[6] = { /* Straight-thru bit-flags */
@@ -236,6 +267,7 @@ static const zueci_u16 zueci_iso8859_5_u_u[94] = { /* Unicode codepoints sorted 
     0x0452, 0x0453, 0x0454, 0x0455, 0x0456, 0x0457, 0x0458, 0x0459,
     0x045A, 0x045B, 0x045C, 0x045E, 0x045F, 0x2116,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_5_u_sb[94] = { /* Single-byte in Unicode order */
     0xFD,   0xA1,   0xA2,   0xA3,   0xA4,   0xA5,   0xA6,   0xA7,
     0xA8,   0xA9,   0xAA,   0xAB,   0xAC,   0xAE,   0xAF,   0xB0,
@@ -250,6 +282,8 @@ static const unsigned char zueci_iso8859_5_u_sb[94] = { /* Single-byte in Unicod
     0xF2,   0xF3,   0xF4,   0xF5,   0xF6,   0xF7,   0xF8,   0xF9,
     0xFA,   0xFB,   0xFC,   0xFE,   0xFF,   0xF0,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_5_sb_u[96] = { /* Single-byte sorted indexes into Unicode table */
       -1,      1,      2,      3,      4,      5,      6,      7,
        8,      9,     10,     11,     12,     -1,     13,     14,
@@ -264,18 +298,23 @@ static const char zueci_iso8859_5_sb_u[96] = { /* Single-byte sorted indexes int
       93,     79,     80,     81,     82,     83,     84,     85,
       86,     87,     88,     89,     90,      0,     91,     92,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 7 ISO/IEC 8859-5 Latin/Cyrillic */
 static int zueci_u_iso8859_5(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_5_s, zueci_iso8859_5_u_u, zueci_iso8859_5_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_5_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_5_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_5_s, zueci_iso8859_5_u_u, zueci_iso8859_5_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_5_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 8 ISO/IEC 8859-6 */
 static const zueci_u16 zueci_iso8859_6_s[6] = { /* Straight-thru bit-flags */
@@ -289,6 +328,7 @@ static const zueci_u16 zueci_iso8859_6_u_u[48] = { /* Unicode codepoints sorted 
     0x0643, 0x0644, 0x0645, 0x0646, 0x0647, 0x0648, 0x0649, 0x064A,
     0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x0652,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_6_u_sb[48] = { /* Single-byte in Unicode order */
     0xAC,   0xBB,   0xBF,   0xC1,   0xC2,   0xC3,   0xC4,   0xC5,
     0xC6,   0xC7,   0xC8,   0xC9,   0xCA,   0xCB,   0xCC,   0xCD,
@@ -297,6 +337,8 @@ static const unsigned char zueci_iso8859_6_u_sb[48] = { /* Single-byte in Unicod
     0xE3,   0xE4,   0xE5,   0xE6,   0xE7,   0xE8,   0xE9,   0xEA,
     0xEB,   0xEC,   0xED,   0xEE,   0xEF,   0xF0,   0xF1,   0xF2,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_6_sb_u[83] = { /* Single-byte sorted indexes into Unicode table */
       -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
       -1,     -1,     -1,     -1,      0,     -1,     -1,     -1,
@@ -310,18 +352,23 @@ static const char zueci_iso8859_6_sb_u[83] = { /* Single-byte sorted indexes int
       37,     38,     39,     40,     41,     42,     43,     44,
       45,     46,     47,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 8 ISO/IEC 8859-6 Latin/Arabic */
 static int zueci_u_iso8859_6(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_6_s, zueci_iso8859_6_u_u, zueci_iso8859_6_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_6_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_6_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_6_s, zueci_iso8859_6_u_u, zueci_iso8859_6_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_6_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 9 ISO/IEC 8859-7 */
 static const zueci_u16 zueci_iso8859_7_s[6] = { /* Straight-thru bit-flags */
@@ -339,6 +386,7 @@ static const zueci_u16 zueci_iso8859_7_u_u[77] = { /* Unicode codepoints sorted 
     0x03C7, 0x03C8, 0x03C9, 0x03CA, 0x03CB, 0x03CC, 0x03CD, 0x03CE,
     0x2015, 0x2018, 0x2019, 0x20AC, 0x20AF,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_7_u_sb[77] = { /* Single-byte in Unicode order */
     0xAA,   0xB4,   0xB5,   0xB6,   0xB8,   0xB9,   0xBA,   0xBC,
     0xBE,   0xBF,   0xC0,   0xC1,   0xC2,   0xC3,   0xC4,   0xC5,
@@ -351,6 +399,8 @@ static const unsigned char zueci_iso8859_7_u_sb[77] = { /* Single-byte in Unicod
     0xF7,   0xF8,   0xF9,   0xFA,   0xFB,   0xFC,   0xFD,   0xFE,
     0xAF,   0xA1,   0xA2,   0xA4,   0xA5,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_7_sb_u[95] = { /* Single-byte sorted indexes into Unicode table */
       -1,     73,     74,     -1,     75,     76,     -1,     -1,
       -1,     -1,      0,     -1,     -1,     -1,     -1,     72,
@@ -365,18 +415,23 @@ static const char zueci_iso8859_7_sb_u[95] = { /* Single-byte sorted indexes int
       57,     58,     59,     60,     61,     62,     63,     64,
       65,     66,     67,     68,     69,     70,     71,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 9 ISO/IEC 8859-7 Latin/Greek */
 static int zueci_u_iso8859_7(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_7_s, zueci_iso8859_7_u_u, zueci_iso8859_7_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_7_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_7_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_7_s, zueci_iso8859_7_u_u, zueci_iso8859_7_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_7_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 10 ISO/IEC 8859-8 */
 static const zueci_u16 zueci_iso8859_8_s[6] = { /* Straight-thru bit-flags */
@@ -388,12 +443,15 @@ static const zueci_u16 zueci_iso8859_8_u_u[32] = { /* Unicode codepoints sorted 
     0x05DE, 0x05DF, 0x05E0, 0x05E1, 0x05E2, 0x05E3, 0x05E4, 0x05E5,
     0x05E6, 0x05E7, 0x05E8, 0x05E9, 0x05EA, 0x200E, 0x200F, 0x2017,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_8_u_sb[32] = { /* Single-byte in Unicode order */
     0xAA,   0xBA,   0xE0,   0xE1,   0xE2,   0xE3,   0xE4,   0xE5,
     0xE6,   0xE7,   0xE8,   0xE9,   0xEA,   0xEB,   0xEC,   0xED,
     0xEE,   0xEF,   0xF0,   0xF1,   0xF2,   0xF3,   0xF4,   0xF5,
     0xF6,   0xF7,   0xF8,   0xF9,   0xFA,   0xFD,   0xFE,   0xDF,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_8_sb_u[95] = { /* Single-byte sorted indexes into Unicode table */
       -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
       -1,     -1,      0,     -1,     -1,     -1,     -1,     -1,
@@ -408,18 +466,23 @@ static const char zueci_iso8859_8_sb_u[95] = { /* Single-byte sorted indexes int
       18,     19,     20,     21,     22,     23,     24,     25,
       26,     27,     28,     -1,     -1,     29,     30,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 10 ISO/IEC 8859-8 Latin/Hebrew */
 static int zueci_u_iso8859_8(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_8_s, zueci_iso8859_8_u_u, zueci_iso8859_8_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_8_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_8_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_8_s, zueci_iso8859_8_u_u, zueci_iso8859_8_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_8_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 11 ISO/IEC 8859-9 */
 static const zueci_u16 zueci_iso8859_9_s[6] = { /* Straight-thru bit-flags */
@@ -428,9 +491,12 @@ static const zueci_u16 zueci_iso8859_9_s[6] = { /* Straight-thru bit-flags */
 static const zueci_u16 zueci_iso8859_9_u_u[6] = { /* Unicode codepoints sorted */
     0x011E, 0x011F, 0x0130, 0x0131, 0x015E, 0x015F,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_9_u_sb[6] = { /* Single-byte in Unicode order */
     0xD0,   0xF0,   0xDD,   0xFD,   0xDE,   0xFE,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_9_sb_u[95] = { /* Single-byte sorted indexes into Unicode table */
       -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
       -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
@@ -445,18 +511,23 @@ static const char zueci_iso8859_9_sb_u[95] = { /* Single-byte sorted indexes int
        1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
       -1,     -1,     -1,     -1,     -1,      3,      5,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 11 ISO/IEC 8859-9 Latin alphabet No. 5 (Latin-5) (Latin/Turkish) */
 static int zueci_u_iso8859_9(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_9_s, zueci_iso8859_9_u_u, zueci_iso8859_9_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_9_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_9_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_9_s, zueci_iso8859_9_u_u, zueci_iso8859_9_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_9_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 12 ISO/IEC 8859-10 */
 static const zueci_u16 zueci_iso8859_10_s[6] = { /* Straight-thru bit-flags */
@@ -470,6 +541,7 @@ static const zueci_u16 zueci_iso8859_10_u_u[46] = { /* Unicode codepoints sorted
     0x014D, 0x0160, 0x0161, 0x0166, 0x0167, 0x0168, 0x0169, 0x016A,
     0x016B, 0x0172, 0x0173, 0x017D, 0x017E, 0x2015,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_10_u_sb[46] = { /* Single-byte in Unicode order */
     0xC0,   0xE0,   0xA1,   0xB1,   0xC8,   0xE8,   0xA9,   0xB9,
     0xA2,   0xB2,   0xCC,   0xEC,   0xCA,   0xEA,   0xA3,   0xB3,
@@ -478,6 +550,8 @@ static const unsigned char zueci_iso8859_10_u_sb[46] = { /* Single-byte in Unico
     0xF2,   0xAA,   0xBA,   0xAB,   0xBB,   0xD7,   0xF7,   0xAE,
     0xBE,   0xD9,   0xF9,   0xAC,   0xBC,   0xBD,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_10_sb_u[96] = { /* Single-byte sorted indexes into Unicode table */
       -1,      2,      8,     14,     18,     16,     22,     -1,
       25,      6,     33,     35,     43,     -1,     39,     29,
@@ -492,18 +566,23 @@ static const char zueci_iso8859_10_sb_u[96] = { /* Single-byte sorted indexes in
       -1,     28,     32,     -1,     -1,     -1,     -1,     38,
       -1,     42,     -1,     -1,     -1,     -1,     -1,     24,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 12 ISO/IEC 8859-10 Latin alphabet No. 6 (Latin-6) (Nordic) */
 static int zueci_u_iso8859_10(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_10_s, zueci_iso8859_10_u_u, zueci_iso8859_10_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_10_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_10_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_10_s, zueci_iso8859_10_u_u, zueci_iso8859_10_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_10_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 13 ISO/IEC 8859-11 */
 static const zueci_u16 zueci_iso8859_11_s[6] = { /* Straight-thru bit-flags */
@@ -522,6 +601,7 @@ static const zueci_u16 zueci_iso8859_11_u_u[87] = { /* Unicode codepoints sorted
     0x0E4D, 0x0E4E, 0x0E4F, 0x0E50, 0x0E51, 0x0E52, 0x0E53, 0x0E54,
     0x0E55, 0x0E56, 0x0E57, 0x0E58, 0x0E59, 0x0E5A, 0x0E5B,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_11_u_sb[87] = { /* Single-byte in Unicode order */
     0xA1,   0xA2,   0xA3,   0xA4,   0xA5,   0xA6,   0xA7,   0xA8,
     0xA9,   0xAA,   0xAB,   0xAC,   0xAD,   0xAE,   0xAF,   0xB0,
@@ -535,6 +615,8 @@ static const unsigned char zueci_iso8859_11_u_sb[87] = { /* Single-byte in Unico
     0xED,   0xEE,   0xEF,   0xF0,   0xF1,   0xF2,   0xF3,   0xF4,
     0xF5,   0xF6,   0xF7,   0xF8,   0xF9,   0xFA,   0xFB,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_11_sb_u[92] = { /* Single-byte sorted indexes into Unicode table */
       -1,      0,      1,      2,      3,      4,      5,      6,
        7,      8,      9,     10,     11,     12,     13,     14,
@@ -549,18 +631,23 @@ static const char zueci_iso8859_11_sb_u[92] = { /* Single-byte sorted indexes in
       75,     76,     77,     78,     79,     80,     81,     82,
       83,     84,     85,     86,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 13 ISO/IEC 8859-11 Latin/Thai */
 static int zueci_u_iso8859_11(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_11_s, zueci_iso8859_11_u_u, zueci_iso8859_11_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_11_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_11_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_11_s, zueci_iso8859_11_u_u, zueci_iso8859_11_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_11_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 15 ISO/IEC 8859-13 */
 static const zueci_u16 zueci_iso8859_13_s[6] = { /* Straight-thru bit-flags */
@@ -575,6 +662,7 @@ static const zueci_u16 zueci_iso8859_13_u_u[56] = { /* Unicode codepoints sorted
     0x0160, 0x0161, 0x016A, 0x016B, 0x0172, 0x0173, 0x0179, 0x017A,
     0x017B, 0x017C, 0x017D, 0x017E, 0x2019, 0x201C, 0x201D, 0x201E,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_13_u_sb[56] = { /* Single-byte in Unicode order */
     0xAF,   0xA8,   0xBF,   0xB8,   0xC2,   0xE2,   0xC0,   0xE0,
     0xC3,   0xE3,   0xC8,   0xE8,   0xC7,   0xE7,   0xCB,   0xEB,
@@ -584,6 +672,8 @@ static const unsigned char zueci_iso8859_13_u_sb[56] = { /* Single-byte in Unico
     0xD0,   0xF0,   0xDB,   0xFB,   0xD8,   0xF8,   0xCA,   0xEA,
     0xDD,   0xFD,   0xDE,   0xFE,   0xFF,   0xB4,   0xA1,   0xA5,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_13_sb_u[96] = { /* Single-byte sorted indexes into Unicode table */
       -1,     54,     -1,     -1,     -1,     55,     -1,     -1,
        1,     -1,     36,     -1,     -1,     -1,     -1,      0,
@@ -598,18 +688,23 @@ static const char zueci_iso8859_13_sb_u[96] = { /* Single-byte sorted indexes in
       41,     31,     33,     -1,     35,     -1,     -1,     -1,
       45,     29,     39,     43,     -1,     49,     51,     52,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 15 ISO/IEC 8859-13 Latin alphabet No. 7 (Latin-7) (Baltic Rim) */
 static int zueci_u_iso8859_13(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_13_s, zueci_iso8859_13_u_u, zueci_iso8859_13_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_13_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_13_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_13_s, zueci_iso8859_13_u_u, zueci_iso8859_13_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_13_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 16 ISO/IEC 8859-14 */
 static const zueci_u16 zueci_iso8859_14_s[6] = { /* Straight-thru bit-flags */
@@ -621,12 +716,15 @@ static const zueci_u16 zueci_iso8859_14_u_u[31] = { /* Unicode codepoints sorted
     0x1E41, 0x1E56, 0x1E57, 0x1E60, 0x1E61, 0x1E6A, 0x1E6B, 0x1E80,
     0x1E81, 0x1E82, 0x1E83, 0x1E84, 0x1E85, 0x1EF2, 0x1EF3,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_14_u_sb[31] = { /* Single-byte in Unicode order */
     0xA4,   0xA5,   0xB2,   0xB3,   0xD0,   0xF0,   0xDE,   0xFE,
     0xAF,   0xA1,   0xA2,   0xA6,   0xAB,   0xB0,   0xB1,   0xB4,
     0xB5,   0xB7,   0xB9,   0xBB,   0xBF,   0xD7,   0xF7,   0xA8,
     0xB8,   0xAA,   0xBA,   0xBD,   0xBE,   0xAC,   0xBC,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_14_sb_u[95] = { /* Single-byte sorted indexes into Unicode table */
       -1,      9,     10,     -1,      0,      1,     11,     -1,
       23,     -1,     25,     12,     29,     -1,     -1,      8,
@@ -641,18 +739,23 @@ static const char zueci_iso8859_14_sb_u[95] = { /* Single-byte sorted indexes in
        5,     -1,     -1,     -1,     -1,     -1,     -1,     22,
       -1,     -1,     -1,     -1,     -1,     -1,      7,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 16 ISO/IEC 8859-14 Latin alphabet No. 8 (Latin-8) (Celtic) */
 static int zueci_u_iso8859_14(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_14_s, zueci_iso8859_14_u_u, zueci_iso8859_14_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_14_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_14_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_14_s, zueci_iso8859_14_u_u, zueci_iso8859_14_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_14_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 17 ISO/IEC 8859-15 */
 static const zueci_u16 zueci_iso8859_15_s[6] = { /* Straight-thru bit-flags */
@@ -661,27 +764,35 @@ static const zueci_u16 zueci_iso8859_15_s[6] = { /* Straight-thru bit-flags */
 static const zueci_u16 zueci_iso8859_15_u_u[8] = { /* Unicode codepoints sorted */
     0x0152, 0x0153, 0x0160, 0x0161, 0x0178, 0x017D, 0x017E, 0x20AC,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_15_u_sb[8] = { /* Single-byte in Unicode order */
     0xBC,   0xBD,   0xA6,   0xA8,   0xBE,   0xB4,   0xB8,   0xA4,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_15_sb_u[31] = { /* Single-byte sorted indexes into Unicode table */
       -1,     -1,     -1,     -1,      7,     -1,      2,     -1,
        3,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
       -1,     -1,     -1,     -1,      5,     -1,     -1,     -1,
        6,     -1,     -1,     -1,      0,      1,      4,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 17 ISO/IEC 8859-15 Latin alphabet No. 9 (Latin-9) */
 static int zueci_u_iso8859_15(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_15_s, zueci_iso8859_15_u_u, zueci_iso8859_15_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_15_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_15_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_15_s, zueci_iso8859_15_u_u, zueci_iso8859_15_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_15_sb_u), p_u);
 }
+#endif
 
 /* Tables for ECI 18 ISO/IEC 8859-16 */
 static const zueci_u16 zueci_iso8859_16_s[6] = { /* Straight-thru bit-flags */
@@ -694,6 +805,7 @@ static const zueci_u16 zueci_iso8859_16_u_u[40] = { /* Unicode codepoints sorted
     0x0170, 0x0171, 0x0178, 0x0179, 0x017A, 0x017B, 0x017C, 0x017D,
     0x017E, 0x0218, 0x0219, 0x021A, 0x021B, 0x201D, 0x201E, 0x20AC,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_iso8859_16_u_sb[40] = { /* Single-byte in Unicode order */
     0xC3,   0xE3,   0xA1,   0xA2,   0xC5,   0xE5,   0xB2,   0xB9,
     0xD0,   0xF0,   0xDD,   0xFD,   0xA3,   0xB3,   0xD1,   0xF1,
@@ -701,6 +813,8 @@ static const unsigned char zueci_iso8859_16_u_sb[40] = { /* Single-byte in Unico
     0xD8,   0xF8,   0xBE,   0xAC,   0xAE,   0xAF,   0xBF,   0xB4,
     0xB8,   0xAA,   0xBA,   0xDE,   0xFE,   0xB5,   0xA5,   0xA4,
 };
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_iso8859_16_sb_u[95] = { /* Single-byte sorted indexes into Unicode table */
       -1,      2,      3,     12,     39,     38,     22,     -1,
       23,     -1,     33,     -1,     27,     -1,     28,     29,
@@ -715,26 +829,35 @@ static const char zueci_iso8859_16_sb_u[95] = { /* Single-byte sorted indexes in
        9,     15,     -1,     -1,     -1,     17,     -1,     21,
       25,     -1,     -1,     -1,     -1,     11,     36,
 };
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 18 ISO/IEC 8859-16 Latin alphabet No. 10 (Latin-10) (South-Eastern European) */
 static int zueci_u_iso8859_16(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_iso8859(u, zueci_iso8859_16_s, zueci_iso8859_16_u_u, zueci_iso8859_16_u_sb,
                            ZUECI_ASIZE(zueci_iso8859_16_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_iso8859_16_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
     (void)len;
     return zueci_iso8859_u(*src, flags, zueci_iso8859_16_s, zueci_iso8859_16_u_u, zueci_iso8859_16_sb_u,
                            ZUECI_ASIZE(zueci_iso8859_16_sb_u), p_u);
 }
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Forward reference to base Unicode to Windows-125x routine - see "zueci.c" */
 static int zueci_u_cp125x(const zueci_u32 u, const zueci_u16 *tab_s, const zueci_u16 *tab_u_u,
             const unsigned char *tab_u_sb, int e, unsigned char *dest);
+#endif
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Forward reference to base Windows-125x to Unicode routine - see "zueci.c" */
 static int zueci_cp125x_u(const unsigned char c, const unsigned int flags, const zueci_u16 *tab_s,
             const zueci_u16 *tab_u_u, const char *tab_sb_u, const int c_max, zueci_u32 *p_u);
+#endif
 
 /* Tables for ECI 21 Windows 1250 */
 static const zueci_u16 zueci_cp1250_s[6] = { /* Straight-thru bit-flags */
@@ -752,6 +875,7 @@ static const zueci_u16 zueci_cp1250_u_u[74] = { /* Unicode codepoints sorted */
     0x201E, 0x2020, 0x2021, 0x2022, 0x2026, 0x2030, 0x2039, 0x203A,
     0x20AC, 0x2122,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_cp1250_u_sb[74] = { /* Single-byte in Unicode order */
     0xC3,   0xE3,   0xA5,   0xB9,   0xC6,   0xE6,   0xC8,   0xE8,
     0xCF,   0xEF,   0xD0,   0xF0,   0xCA,   0xEA,   0xCC,   0xEC,
@@ -764,6 +888,8 @@ static const unsigned char zueci_cp1250_u_sb[74] = { /* Single-byte in Unicode o
     0x84,   0x86,   0x87,   0x95,   0x85,   0x89,   0x8B,   0x9B,
     0x80,   0x99,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_cp1250_sb_u[128] = { /* Single-byte sorted indexes into Unicode table */
       72,     -1,     61,     -1,     64,     68,     65,     66,
       -1,     69,     36,     70,     32,     40,     50,     46,
@@ -782,17 +908,22 @@ static const char zueci_cp1250_sb_u[128] = { /* Single-byte sorted indexes into 
       11,     23,     25,     -1,     -1,     27,     -1,     -1,
       31,     43,     -1,     45,     -1,     -1,     39,     54,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 21 Windows-1250 Latin 2 (Central Europe) */
 static int zueci_u_cp1250(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_cp125x(u, zueci_cp1250_s, zueci_cp1250_u_u, zueci_cp1250_u_sb,
                           ZUECI_ASIZE(zueci_cp1250_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_cp1250_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     (void)len;
     return zueci_cp125x_u(*src, flags, zueci_cp1250_s, zueci_cp1250_u_u, zueci_cp1250_sb_u,
                           ZUECI_ASIZE(zueci_cp1250_sb_u) + 0x80, p_u);
 }
+#endif
 
 /* Tables for ECI 22 Windows 1251 */
 static const zueci_u16 zueci_cp1251_s[6] = { /* Straight-thru bit-flags */
@@ -814,6 +945,7 @@ static const zueci_u16 zueci_cp1251_u_u[112] = { /* Unicode codepoints sorted */
     0x2018, 0x2019, 0x201A, 0x201C, 0x201D, 0x201E, 0x2020, 0x2021,
     0x2022, 0x2026, 0x2030, 0x2039, 0x203A, 0x20AC, 0x2116, 0x2122,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_cp1251_u_sb[112] = { /* Single-byte in Unicode order */
     0xA8,   0x80,   0x81,   0xAA,   0xBD,   0xB2,   0xAF,   0xA3,
     0x8A,   0x8C,   0x8E,   0x8D,   0xA1,   0x8F,   0xC0,   0xC1,
@@ -830,6 +962,8 @@ static const unsigned char zueci_cp1251_u_sb[112] = { /* Single-byte in Unicode 
     0x91,   0x92,   0x82,   0x93,   0x94,   0x84,   0x86,   0x87,
     0x95,   0x85,   0x89,   0x8B,   0x9B,   0x88,   0xB9,   0x99,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_cp1251_sb_u[128] = { /* Single-byte sorted indexes into Unicode table */
        1,      2,     98,     80,    101,    105,    102,    103,
      109,    106,      8,    107,      9,     11,     10,     13,
@@ -848,17 +982,22 @@ static const char zueci_cp1251_sb_u[128] = { /* Single-byte sorted indexes into 
       62,     63,     64,     65,     66,     67,     68,     69,
       70,     71,     72,     73,     74,     75,     76,     77,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 22 Windows-1251 Cyrillic */
 static int zueci_u_cp1251(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_cp125x(u, zueci_cp1251_s, zueci_cp1251_u_u, zueci_cp1251_u_sb,
                           ZUECI_ASIZE(zueci_cp1251_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_cp1251_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     (void)len;
     return zueci_cp125x_u(*src, flags, zueci_cp1251_s, zueci_cp1251_u_u, zueci_cp1251_sb_u,
                           ZUECI_ASIZE(zueci_cp1251_sb_u) + 0x80, p_u);
 }
+#endif
 
 /* Tables for ECI 23 Windows 1252 */
 static const zueci_u16 zueci_cp1252_s[6] = { /* Straight-thru bit-flags */
@@ -870,29 +1009,37 @@ static const zueci_u16 zueci_cp1252_u_u[27] = { /* Unicode codepoints sorted */
     0x201D, 0x201E, 0x2020, 0x2021, 0x2022, 0x2026, 0x2030, 0x2039,
     0x203A, 0x20AC, 0x2122,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_cp1252_u_sb[27] = { /* Single-byte in Unicode order */
     0x8C,   0x9C,   0x8A,   0x9A,   0x9F,   0x8E,   0x9E,   0x83,
     0x88,   0x98,   0x96,   0x97,   0x91,   0x92,   0x82,   0x93,
     0x94,   0x84,   0x86,   0x87,   0x95,   0x85,   0x89,   0x8B,
     0x9B,   0x80,   0x99,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_cp1252_sb_u[32] = { /* Single-byte sorted indexes into Unicode table */
       25,     -1,     14,      7,     17,     21,     18,     19,
        8,     22,      2,     23,      0,     -1,      5,     -1,
       -1,     12,     13,     15,     16,     20,     10,     11,
        9,     26,      3,     24,      1,     -1,      6,      4,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 23 Windows-1252 Latin 1 */
 static int zueci_u_cp1252(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_cp125x(u, zueci_cp1252_s, zueci_cp1252_u_u, zueci_cp1252_u_sb,
                           ZUECI_ASIZE(zueci_cp1252_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_cp1252_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     (void)len;
     return zueci_cp125x_u(*src, flags, zueci_cp1252_s, zueci_cp1252_u_u, zueci_cp1252_sb_u,
                           ZUECI_ASIZE(zueci_cp1252_sb_u) + 0x80, p_u);
 }
+#endif
 
 /* Tables for ECI 24 Windows 1256 */
 static const zueci_u16 zueci_cp1256_s[6] = { /* Straight-thru bit-flags */
@@ -911,6 +1058,7 @@ static const zueci_u16 zueci_cp1256_u_u[85] = { /* Unicode codepoints sorted */
     0x201A, 0x201C, 0x201D, 0x201E, 0x2020, 0x2021, 0x2022, 0x2026,
     0x2030, 0x2039, 0x203A, 0x20AC, 0x2122,
 };
+#ifndef ZUECI_EMBED_NO_TO_ECI
 static const unsigned char zueci_cp1256_u_sb[85] = { /* Single-byte in Unicode order */
     0x8C,   0x9C,   0x83,   0x88,   0xA1,   0xBA,   0xBF,   0xC1,
     0xC2,   0xC3,   0xC4,   0xC5,   0xC6,   0xC7,   0xC8,   0xC9,
@@ -924,6 +1072,8 @@ static const unsigned char zueci_cp1256_u_sb[85] = { /* Single-byte in Unicode o
     0x82,   0x93,   0x94,   0x84,   0x86,   0x87,   0x95,   0x85,
     0x89,   0x8B,   0x9B,   0x80,   0x99,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static const char zueci_cp1256_sb_u[128] = { /* Single-byte sorted indexes into Unicode table */
       83,     53,     72,      2,     75,     79,     76,     77,
        3,     80,     52,     81,      0,     54,     57,     55,
@@ -942,16 +1092,21 @@ static const char zueci_cp1256_sb_u[128] = { /* Single-byte sorted indexes into 
       44,     45,     46,     47,     -1,     48,     49,     -1,
       50,     -1,     51,     -1,     -1,     66,     67,     63,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* ECI 24 Windows-1256 Arabic */
 static int zueci_u_cp1256(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_cp125x(u, zueci_cp1256_s, zueci_cp1256_u_u, zueci_cp1256_u_sb,
                           ZUECI_ASIZE(zueci_cp1256_u_u) - 1, dest);
 }
+#endif
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 static int zueci_cp1256_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     (void)len;
     return zueci_cp125x_u(*src, flags, zueci_cp1256_s, zueci_cp1256_u_u, zueci_cp1256_sb_u,
                           ZUECI_ASIZE(zueci_cp1256_sb_u) + 0x80, p_u);
 }
+#endif
 
 #endif /* ZUECI_SB_H */

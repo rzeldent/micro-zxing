@@ -8,7 +8,7 @@
 #ifndef ZUECI_H
 #define ZUECI_H
 
-/* Version: 1.0.0 */
+/* Version: 1.0.1 */
 
 /* Warning and error returns from API functions below */
 #define ZUECI_WARN_INVALID_DATA     1   /* Invalid data but replacement character used */
@@ -76,7 +76,7 @@ extern "C" {
         170  ISO/IEC 646 Invariant
         899  8-bit binary data
 
-    "(top)" means encoding applies to codepoints U+80..FF (or U+A0..FF for ISO/IEC 8859) with U+00..7F as ASCII
+    "(top)" means encoding applies to codepoints 0x80..FF (or 0xA0..FF for ISO/IEC 8859) with 0x00..7F as ASCII
 
     ECIs 0, 1 and 2 are obsolete, however ECI 2 is still referenced by ISO/IEC 15438:2015 (PDF417) Annex H.2.3
 
@@ -104,6 +104,12 @@ extern "C" {
  */
 
 /*
+    If embedding the library (i.e. including the 10 files directly) and only want ECI-to-UTF-8 functionality,
+    define `ZUECI_EMBED_NO_TO_ECI`
+*/
+#ifndef ZUECI_EMBED_NO_TO_ECI
+
+/*
     Convert UTF-8 `src` of length `src_len` to `eci`-encoded `dest`.
     `p_dest_len` is set to length of `dest` on output.
     `dest` must be big enough (4-times the `src_len`, or see `zueci_dest_len_eci()`). It is not NUL-terminated.
@@ -119,6 +125,8 @@ ZUECI_EXTERN int zueci_utf8_to_eci(const int eci, const unsigned char src[], con
  */
 ZUECI_EXTERN int zueci_dest_len_eci(const int eci, const unsigned char src[], const int src_len, int *p_dest_len);
 
+#endif /* ZUECI_EMBED_NO_TO_ECI */
+
 /*
     These flags can be OR-ed together to change the behaviour of `zueci_eci_to_utf8()` and `zueci_dest_len_utf8()`
  */
@@ -133,6 +141,12 @@ ZUECI_EXTERN int zueci_dest_len_eci(const int eci, const unsigned char src[], co
     For ECI 20 Shift JIS, copy backslash & tilde straight-thru rather than mapping to Yen sign & overline resp.
  */
 #define ZUECI_FLAG_SJIS_STRAIGHT_THRU   2
+
+/*
+    If embedding the library (i.e. including the 10 files directly) and only want UTF-8-to-ECI functionality,
+    define `ZUECI_EMBED_NO_TO_UTF8`
+*/
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 
 /*
     Convert ECI-encoded `src` of length `src_len` to UTF-8 `dest`.
@@ -154,6 +168,8 @@ ZUECI_EXTERN int zueci_eci_to_utf8(const int eci, const unsigned char src[], con
  */
 ZUECI_EXTERN int zueci_dest_len_utf8(const int eci, const unsigned char src[], const int src_len,
                     const unsigned int replacement_char, const unsigned int flags, int *p_dest_len);
+
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 #ifdef __cplusplus
 }

@@ -8,6 +8,7 @@
 #include "PDFEncoder.h"
 #include "PDFHighLevelEncoder.h"
 #include <array>
+#include <cmath>
 #include <vector>
 #include <stdexcept>
 
@@ -286,8 +287,8 @@ static const short EC_COEFFICIENTS_L8[] = { 352,  77, 373, 504,  35, 599, 428, 2
 											 63, 310, 863, 251, 366, 304, 282, 738, 675, 410, 389, 244,  31, 121, 303, 263, };
 
 static const short* EC_COEFFICIENTS[] = {EC_COEFFICIENTS_L0, EC_COEFFICIENTS_L1, EC_COEFFICIENTS_L2,
-                                         EC_COEFFICIENTS_L3, EC_COEFFICIENTS_L4, EC_COEFFICIENTS_L5,
-                                         EC_COEFFICIENTS_L6, EC_COEFFICIENTS_L7, EC_COEFFICIENTS_L8};
+										 EC_COEFFICIENTS_L3, EC_COEFFICIENTS_L4, EC_COEFFICIENTS_L5,
+										 EC_COEFFICIENTS_L6, EC_COEFFICIENTS_L7, EC_COEFFICIENTS_L8};
 
 /**
 * Determines the number of error correction codewords for a specified error correction
@@ -304,9 +305,8 @@ static int GetErrorCorrectionCodewordCount(int errorCorrectionLevel)
 /**
 * Generates the error correction codewords according to 4.10 in ISO/IEC 15438:2001(E).
 *
-* @param dataCodewords        the data codewords
+* @param dataCodewords        the data codewords (including error correction after return)
 * @param errorCorrectionLevel the error correction level (0-8)
-* @return the String representing the error correction codewords
 */
 static void GenerateErrorCorrection(std::vector<int>& dataCodewords, int errorCorrectionLevel)
 {
@@ -445,7 +445,6 @@ static BarcodeMatrix EncodeLowLevel(const std::vector<int>& fullCodewords, int c
 *
 * @param sourceCodeWords number of code words
 * @param errorCorrectionCodeWords number of error correction code words
-* @return dimension object containing cols as width and rows as height
 */
 static void DetermineDimensions(int minCols, int maxCols, int minRows, int maxRows, int sourceCodeWords, int errorCorrectionCodeWords, int& outCols, int& outRows)
 {

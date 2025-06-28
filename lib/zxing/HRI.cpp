@@ -9,29 +9,32 @@
 
 #include "ZXAlgorithms.h"
 
-#include <sstream>
+#include <cmath>
+#include <cstring>
+#include <string_view>
 
 namespace ZXing {
 
 struct AiInfo
 {
-	std::string_view aiPrefix;
-	int _fieldSize;	// if negative, the length is variable and abs(length) give the max size
+	const char aiPrefix[5];
+	int8_t _fieldSize;	// if negative, the length is variable and abs(length) give the max size
 
 	bool isVariableLength() const noexcept { return _fieldSize < 0; }
 	int fieldSize() const noexcept { return std::abs(_fieldSize); }
 	int aiSize() const
 	{
-		if ((aiPrefix[0] == '3' && Contains("1234569", aiPrefix[1])) || aiPrefix == "703" || aiPrefix == "723")
+		using namespace std::literals;
+		if ((aiPrefix[0] == '3' && Contains("1234569", aiPrefix[1])) || aiPrefix == "703"sv || aiPrefix == "723"sv)
 			return 4;
 		else
-			return Size(aiPrefix);
+			return strlen(aiPrefix);
 	}
 };
 
-// GS1 General Specifications Release 22.0 (Jan 22, 2022)
+// https://github.com/gs1/gs1-syntax-dictionary 2024-06-10
 static const AiInfo aiInfos[] = {
-// TWO_DIGIT_DATA_LENGTH
+//TWO_DIGIT_DATA_LENGTH
 	{ "00", 18 },
 	{ "01", 14 },
 	{ "02", 14 },
@@ -51,7 +54,6 @@ static const AiInfo aiInfos[] = {
 	{ "30", -8 },
 	{ "37", -8 },
 
-	//internal company codes
 	{ "90", -30 },
 	{ "91", -90 },
 	{ "92", -90 },
@@ -176,6 +178,7 @@ static const AiInfo aiInfos[] = {
 	{ "4306", -70 },
 	{ "4307", 2 },
 	{ "4308", -30 },
+	{ "4309", 20 },
 	{ "4310", -35 },
 	{ "4311", -35 },
 	{ "4312", -70 },
@@ -193,6 +196,10 @@ static const AiInfo aiInfos[] = {
 	{ "4324", 10 },
 	{ "4325", 10 },
 	{ "4326", 6 },
+	{ "4330", -7 },
+	{ "4331", -7 },
+	{ "4332", -7 },
+	{ "4333", -7 },
 
 	{ "7001", 13 },
 	{ "7002", -30 },
@@ -204,12 +211,25 @@ static const AiInfo aiInfos[] = {
 	{ "7008", -3 },
 	{ "7009", -10 },
 	{ "7010", -2 },
+	{ "7011", -10 },
 	{ "7020", -20 },
 	{ "7021", -20 },
 	{ "7022", -20 },
 	{ "7023", -30 },
 	{ "7040", 4 },
 	{ "7240", -20 },
+	{ "7241", 2 },
+	{ "7242", -25 },
+	{ "7250", 8 },
+	{ "7251", 12 },
+	{ "7252", 1 },
+	{ "7253", -40 },
+	{ "7254", -40 },
+	{ "7255", -10 },
+	{ "7256", -90 },
+	{ "7257", -70 },
+	{ "7258", 3 },
+	{ "7259", -40 },
 
 	{ "8001", 14 },
 	{ "8002", -20 },
@@ -229,6 +249,7 @@ static const AiInfo aiInfos[] = {
 	{ "8019", -10 },
 	{ "8020", -25 },
 	{ "8026", 18 },
+	{ "8030", -90 },
 	{ "8110", -70 },
 	{ "8111", 4 },
 	{ "8112", -70 },
@@ -283,26 +304,20 @@ std::string HRIFromGS1(std::string_view gs1)
 	return res;
 }
 
-#if __cplusplus > 201703L
-std::ostream& operator<<(std::ostream& os, const char8_t* str)
-{
-	return os << reinterpret_cast<const char*>(str);
-}
-#endif
-
 std::string HRIFromISO15434(std::string_view str)
 {
 	// Use available unicode symbols to simulate sub- and superscript letters as specified in
 	// ISO/IEC 15434:2019(E) 6. Human readable representation
 
-	std::ostringstream oss;
+	std::string res;
+	res.reserve(str.size());
 
 	for (char c : str) {
 #if 1
 		if (0 <= c && c <= 0x20)
-			oss << "\xe2\x90" << char(0x80 + c); // Unicode Block “Control Pictures”: 0x2400
+			(res += "\xe2\x90") += char(0x80 + c); // Unicode Block “Control Pictures”: 0x2400
 		else
-			oss << c;
+			res += c;
 #else
 		switch (c) {
 		case 4: oss << u8"\u1d31\u1d52\u209c"; break; // EOT
@@ -315,7 +330,7 @@ std::string HRIFromISO15434(std::string_view str)
 #endif
 	}
 
-	return oss.str();
+	return res;
 }
 
 } // namespace ZXing

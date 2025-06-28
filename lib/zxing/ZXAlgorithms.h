@@ -8,11 +8,13 @@
 #include "Error.h"
 
 #include <algorithm>
+#include <charconv>
 #include <cstring>
 #include <initializer_list>
 #include <iterator>
 #include <numeric>
 #include <string>
+#include <stdexcept>
 #include <utility>
 
 namespace ZXing {
@@ -46,15 +48,29 @@ inline bool Contains(const char* str, char c) {
 	return strchr(str, c) != nullptr;
 }
 
+inline bool Contains(std::string_view str, std::string_view substr) {
+	return str.find(substr) != std::string_view::npos;
+}
+
 template <template <typename...> typename C, typename... Ts>
-auto FirstOrDefault(C<Ts...>&& results)
+auto FirstOrDefault(C<Ts...>&& container)
 {
-	return results.empty() ? typename C<Ts...>::value_type() : std::move(results.front());
+	return container.empty() ? typename C<Ts...>::value_type() : std::move(container.front());
+}
+
+template <typename Iterator, typename Value = typename std::iterator_traits<Iterator>::value_type, typename Op = std::plus<Value>>
+Value Reduce(Iterator b, Iterator e, Value v = Value{}, Op op = {}) {
+	// std::reduce() first sounded like a better implementation because it is not implemented as a strict left-fold
+	// operation, meaning the order of the op-application is not specified. This sounded like an optimization opportunity
+	// but it turns out that for this use case it actually does not make a difference (falsepositives runtime). And
+	// when tested with a large std::vector<uint16_t> and proper autovectorization (e.g. clang++ -O2) it turns out that
+	// std::accumulate can be twice as fast as std::reduce.
+	return std::accumulate(b, e, v, op);
 }
 
 template <typename Container, typename Value = typename Container::value_type, typename Op = std::plus<Value>>
 Value Reduce(const Container& c, Value v = Value{}, Op op = {}) {
-	return std::accumulate(std::begin(c), std::end(c), v, op);
+	return Reduce(std::begin(c), std::end(c), v, op);
 }
 
 // see C++20 ssize
@@ -64,8 +80,23 @@ constexpr auto Size(const Container& c) -> decltype(c.size(), int()) {
 }
 
 template <class T, std::size_t N>
-constexpr int Size(const T (&)[N]) noexcept {
+constexpr int Size(T const (&)[N]) noexcept {
 	return narrow_cast<int>(N);
+}
+
+inline constexpr int Size(const char* s) noexcept {
+	return narrow_cast<int>(std::char_traits<char>::length(s));
+}
+
+inline constexpr int Size(char) noexcept { return 1; }
+
+template <typename... Args>
+std::string StrCat(Args&&... args)
+{
+	std::string res;
+	res.reserve((Size(args) + ...));
+	(res += ... += args);
+	return res;
 }
 
 template <typename Container, typename Value>
@@ -105,6 +136,58 @@ std::string ToString(T val, int len)
 	if (val)
 		throw FormatError("Invalid value");
 	return result;
+}
+
+template <class T>
+constexpr std::string_view TypeName()
+{
+#ifdef __clang__
+	std::string_view p = __PRETTY_FUNCTION__;
+	return p.substr(40, p.size() - 40 - 1);
+#elif defined(__GNUC__)
+	std::string_view p = __PRETTY_FUNCTION__;
+	return p.substr(55, p.find(';', 55) - 55);
+#elif defined(_MSC_VER)
+	std::string_view p = __FUNCSIG__;
+	return p.substr(90, p.size() - 90 - 7);
+#endif
+}
+
+template<typename T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+inline T FromString(std::string_view sv)
+{
+	T val = {};
+	auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), val);
+	if (ec != std::errc() || ptr != sv.data() + sv.size())
+		throw std::invalid_argument(StrCat("failed to parse '", TypeName<T>(), "' from '", sv, "'"));
+
+	return val;
+}
+
+template <typename T>
+void UpdateMin(T& min, T val)
+{
+	min = std::min(min, val);
+}
+
+template <typename T>
+void UpdateMax(T& max, T val)
+{
+	max = std::max(max, val);
+}
+
+template <typename T>
+void UpdateMinMax(T& min, T& max, T val)
+{
+	min = std::min(min, val);
+	max = std::max(max, val);
+
+	// Note: the above code is not equivalent to
+	//    if (val < min)        min = val;
+	//    else if (val > max)   max = val;
+	// It is basically the same but without the 'else'. For the 'else'-variant to work,
+	// both min and max have to be initialized with a value that is part of the sequence.
+	// Also it turns out clang and gcc can vectorize the code above but not the code below.
 }
 
 } // ZXing

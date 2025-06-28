@@ -10,6 +10,7 @@
 #ifndef ZUECI_GB18030_H
 #define ZUECI_GB18030_H
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode codepoints sorted */
 static const zueci_u16 zueci_gb18030_2_u_u[273] = {
     0x01F9, 0x1E3F, 0x20AC, 0x2E81, 0x2E84, 0x2E88, 0x2E8B, 0x2E8C,
@@ -48,7 +49,9 @@ static const zueci_u16 zueci_gb18030_2_u_u[273] = {
     0xFE11, 0xFE12, 0xFE13, 0xFE14, 0xFE15, 0xFE16, 0xFE17, 0xFE18,
     0xFE19,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Multibyte values sorted in Unicode order */
 static const zueci_u16 zueci_gb18030_2_u_mb[273] = {
     0xA8BF, 0xA8BC, 0xA2E3, 0xFE50, 0xFE54, 0xFE57, 0xFE58, 0xFE5D,
@@ -87,6 +90,7 @@ static const zueci_u16 zueci_gb18030_2_u_mb[273] = {
     0xA6DB, 0xA6DA, 0xA6DC, 0xA6DD, 0xA6DE, 0xA6DF, 0xA6EC, 0xA6ED,
     0xA6F3,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
 /* End Unicode codepoints of blocks mapping consecutively to 4-byte multibyte blocks */
 static const zueci_u16 zueci_gb18030_4_u_e[206] = {
@@ -118,6 +122,7 @@ static const zueci_u16 zueci_gb18030_4_u_e[206] = {
     0xFE53, 0xFE58, 0xFE67, 0xFF00, 0xFFDF, 0xFFFF,
 };
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Cumulative gaps between Unicode blocks mapping consecutively to 4-byte multibyte blocks,
    used to adjust multibyte offsets */
 static const zueci_u16 zueci_gb18030_4_u_mb_o[206] = {
@@ -148,7 +153,9 @@ static const zueci_u16 zueci_gb18030_4_u_mb_o[206] = {
     25825, 25827, 25828, 25831, 25833, 25836, 25838, 25856,
     25866, 25870, 25884, 25888, 25982, 25988,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* End multibyte codepoints of blocks mapping consecutively to 4-byte multibyte blocks */
 static const zueci_u32 zueci_gb18030_4_mb_e[206] = {
     0x81308435, 0x81308437, 0x81308534, 0x81308539, 0x81308930, 0x81308938, 0x81308A34, 0x81308A35,
@@ -178,7 +185,9 @@ static const zueci_u32 zueci_gb18030_4_mb_e[206] = {
     0x84309B35, 0x84309B38, 0x84309C34, 0x84309C35, 0x84309C37, 0x84318537, 0x84318538, 0x84318632,
     0x84318633, 0x84318634, 0x84318635, 0x84319534, 0x8431A233, 0x8431A439,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Multibyte values sorted in multibyte order */
 static const zueci_u16 zueci_gb18030_2_mb_mb[255] = {
     0xA2AB, 0xA2AC, 0xA2AD, 0xA2AE, 0xA2AF, 0xA2B0, 0xA2E3, 0xA2E4,
@@ -250,5 +259,6 @@ static const zueci_u16 zueci_gb18030_2_mb_u[255] = {
     0x4CA3, 0x4C9F, 0x4CA0, 0x4CA1, 0x4C77, 0x4CA2, 0x4D13, 0x4D14,
     0x4D15, 0x4D16, 0x4D17, 0x4D18, 0x4D19, 0x4DAE, 0x9FBB,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 #endif /* ZUECI_GB18030_H */

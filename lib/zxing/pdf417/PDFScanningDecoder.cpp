@@ -12,9 +12,13 @@
 #include "PDFBarcodeValue.h"
 #include "PDFCodewordDecoder.h"
 #include "PDFDetectionResult.h"
-#include "PDFDecodedBitStreamParser.h"
+#include "PDFDecoder.h"
+#include "PDFCustomData.h"
 #include "PDFModulusGF.h"
+#include "ZXAlgorithms.h"
 #include "ZXTestSupport.h"
+
+#include <cmath>
 
 namespace ZXing {
 namespace Pdf417 {
@@ -73,8 +77,8 @@ static bool CheckCodewordSkew(int codewordSize, int minCodewordWidth, int maxCod
 
 static ModuleBitCountType GetBitCountForCodeword(int codeword)
 {
-    ModuleBitCountType result;
-    result.fill(0);
+	ModuleBitCountType result;
+	result.fill(0);
 	int previousValue = 0;
 	int i = Size(result) - 1;
 	while (true) {
@@ -124,7 +128,7 @@ static Nullable<Codeword> DetectCodeword(const BitMatrix& image, int minColumn, 
 	}
 	// TODO implement check for width and correction of black and white bars
 	// use start (and maybe stop pattern) to determine if blackbars are wider than white bars. If so, adjust.
-	// should probably done only for codewords with a lot more than 17 bits. 
+	// should probably done only for codewords with a lot more than 17 bits.
 	// The following fixes 10-1.png, which has wide black bars and small white bars
 	//    for (int i = 0; i < moduleBitCount.length; i++) {
 	//      if (i % 2 == 0) {
@@ -338,13 +342,14 @@ static bool AdjustCodewordCount(const DetectionResult& detectionResult, std::vec
 {
 	auto numberOfCodewords = barcodeMatrix[0][1].value();
 	int calculatedNumberOfCodewords = detectionResult.barcodeColumnCount() * detectionResult.barcodeRowCount() - GetNumberOfECCodeWords(detectionResult.barcodeECLevel());
+	if (calculatedNumberOfCodewords < 1 || calculatedNumberOfCodewords > CodewordDecoder::MAX_CODEWORDS_IN_BARCODE)
+		calculatedNumberOfCodewords = 0;
 	if (numberOfCodewords.empty()) {
-		if (calculatedNumberOfCodewords < 1 || calculatedNumberOfCodewords > CodewordDecoder::MAX_CODEWORDS_IN_BARCODE) {
+		if (!calculatedNumberOfCodewords)
 			return false;
-		}
 		barcodeMatrix[0][1].setValue(calculatedNumberOfCodewords);
 	}
-	else if (numberOfCodewords[0] != calculatedNumberOfCodewords) {
+	else if (calculatedNumberOfCodewords && numberOfCodewords[0] != calculatedNumberOfCodewords) {
 		// The calculated one is more reliable as it is derived from the row indicator columns
 		barcodeMatrix[0][1].setValue(calculatedNumberOfCodewords);
 	}
@@ -453,7 +458,7 @@ static std::vector<int> FindErrorMagnitudes(const ModulusPoly& errorEvaluator, c
 * @return false if errors cannot be corrected, maybe because of too many errors
 */
 ZXING_EXPORT_TEST_ONLY
-bool DecodeErrorCorrection(std::vector<int>& received, int numECCodewords, const std::vector<int>& erasures, int& nbErrors)
+bool DecodeErrorCorrection(std::vector<int>& received, int numECCodewords, const std::vector<int>& erasures [[maybe_unused]], int& nbErrors)
 {
 	const ModulusGF& field = GetModulusGF();
 	ModulusPoly poly(field, received);
@@ -472,23 +477,23 @@ bool DecodeErrorCorrection(std::vector<int>& received, int numECCodewords, const
 		return true;
 	}
 
-	ModulusPoly knownErrors = field.one();
-	for (int erasure : erasures) {
-		int b = field.exp(Size(received) - 1 - erasure);
-		// Add (1 - bx) term:
-		ModulusPoly term(field, { field.subtract(0, b), 1 });
-		knownErrors = knownErrors.multiply(term);
-	}
+//	ModulusPoly knownErrors = field.one();
+//	for (int erasure : erasures) {
+//		int b = field.exp(Size(received) - 1 - erasure);
+//		// Add (1 - bx) term:
+//		ModulusPoly term(field, { field.subtract(0, b), 1 });
+//		knownErrors = knownErrors.multiply(term);
+//	}
 
 	ModulusPoly syndrome(field, S);
-	//syndrome = syndrome.multiply(knownErrors);
+//	syndrome = syndrome.multiply(knownErrors);
 
 	ModulusPoly sigma, omega;
 	if (!RunEuclideanAlgorithm(field.buildMonomial(numECCodewords, 1), syndrome, numECCodewords, sigma, omega)) {
 		return false;
 	}
 
-	//sigma = sigma.multiply(knownErrors);
+//	sigma = sigma.multiply(knownErrors);
 
 	std::vector<int> errorLocations;
 	if (!FindErrorLocations(sigma, errorLocations)) {
@@ -562,12 +567,11 @@ static bool VerifyCodewordCount(std::vector<int>& codewords, int numECCodewords)
 	return true;
 }
 
-DecoderResult DecodeCodewords(std::vector<int>& codewords, int ecLevel, const std::vector<int>& erasures)
+static DecoderResult DecodeCodewords(std::vector<int>& codewords, int numECCodewords, const std::vector<int>& erasures)
 {
 	if (codewords.empty())
 		return FormatError();
 
-	int numECCodewords = 1 << (ecLevel + 1);
 	int correctedErrorsCount = 0;
 	if (!CorrectErrors(codewords, erasures, numECCodewords, correctedErrorsCount))
 		return ChecksumError();
@@ -576,11 +580,16 @@ DecoderResult DecodeCodewords(std::vector<int>& codewords, int ecLevel, const st
 		return FormatError();
 
 	// Decode the codewords
-	try {
-		return DecodedBitStreamParser::Decode(codewords, ecLevel);
-	} catch (Error e) {
-		return e;
-	}
+	return Decode(codewords).setEcLevel(std::to_string(numECCodewords * 100 / Size(codewords)) + "%");
+}
+
+DecoderResult DecodeCodewords(std::vector<int>& codewords, int numECCodeWords)
+{
+	for (auto& cw : codewords)
+		cw = std::clamp(cw, 0, CodewordDecoder::MAX_CODEWORDS_IN_BARCODE);
+
+	// erasures array has never been actually used inside the error correction code
+	return DecodeCodewords(codewords, numECCodeWords, {});
 }
 
 
@@ -608,7 +617,7 @@ static DecoderResult CreateDecoderResultFromAmbiguousValues(int ecLevel, std::ve
 		for (size_t i = 0; i < ambiguousIndexCount.size(); i++) {
 			codewords[ambiguousIndexes[i]] = ambiguousIndexValues[i][ambiguousIndexCount[i]];
 		}
-		auto result = DecodeCodewords(codewords, ecLevel, erasureArray);
+		auto result = DecodeCodewords(codewords, NumECCodeWords(ecLevel), erasureArray);
 		if (result.error() != Error::Checksum) {
 			return result;
 		}
@@ -666,7 +675,7 @@ static DecoderResult CreateDecoderResult(DetectionResult& detectionResult)
 
 // TODO don't pass in minCodewordWidth and maxCodewordWidth, pass in barcode columns for start and stop pattern
 // columns. That way width can be deducted from the pattern column.
-// This approach also allows detecting more details about the barcode, e.g. if a bar type (white or black) is wider 
+// This approach also allows detecting more details about the barcode, e.g. if a bar type (white or black) is wider
 // than it should be. This can happen if the scanner used a bad blackpoint.
 DecoderResult
 ScanningDecoder::Decode(const BitMatrix& image, const Nullable<ResultPoint>& imageTopLeft, const Nullable<ResultPoint>& imageBottomLeft,
@@ -677,7 +686,7 @@ ScanningDecoder::Decode(const BitMatrix& image, const Nullable<ResultPoint>& ima
 	if (!BoundingBox::Create(image.width(), image.height(), imageTopLeft, imageBottomLeft, imageTopRight, imageBottomRight, boundingBox)) {
 		return {};
 	}
-	
+
 	Nullable<DetectionResultColumn> leftRowIndicatorColumn, rightRowIndicatorColumn;
 	DetectionResult detectionResult;
 	for (int i = 0; i < 2; i++) {
@@ -727,12 +736,15 @@ ScanningDecoder::Decode(const BitMatrix& image, const Nullable<ResultPoint>& ima
 			if (codeword != nullptr) {
 				detectionResult.column(barcodeColumn).value().setCodeword(imageRow, codeword);
 				previousStartColumn = startColumn;
-				minCodewordWidth = std::min(minCodewordWidth, codeword.value().width());
-				maxCodewordWidth = std::max(maxCodewordWidth, codeword.value().width());
+				UpdateMinMax(minCodewordWidth, maxCodewordWidth, codeword.value().width());
 			}
 		}
 	}
-	return CreateDecoderResult(detectionResult);
+	auto res = CreateDecoderResult(detectionResult);
+	auto customData = std::static_pointer_cast<PDF417CustomData>(res.customData());
+	if (customData)
+		customData->approxSymbolWidth = (detectionResult.barcodeColumnCount() + 2) * (minCodewordWidth + maxCodewordWidth) / 2;
+	return res;
 }
 
 } // Pdf417

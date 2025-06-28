@@ -14,13 +14,16 @@
 #include <cstdint>
 #include <sstream>
 
-namespace ZXing {
-
-// TODO: c++20 has char8_t
 #if __cplusplus <= 201703L
+#include "Range.h"
 using char8_t = uint8_t;
+using utf8_t = ZXing::ArrayView<char8_t>;
+#else
+#include <string_view>
+using utf8_t = std::u8string_view;
 #endif
-using utf8_t = std::basic_string_view<char8_t>;
+
+namespace ZXing {
 
 using state_t = uint8_t;
 constexpr state_t kAccepted = 0;
@@ -247,8 +250,10 @@ std::wstring EscapeNonGraphical(std::wstring_view str)
 			ws << "<" << ascii_nongraphs[wc == 127 ? 32 : wc] << ">";
 		else if (wc < 128) // ASCII
 			ws << wc;
-		else if (IsUtf16SurrogatePair(str))
-			ws.write(str.data(), 2), str.remove_prefix(1);
+		else if (IsUtf16SurrogatePair(str)) {
+			ws.write(str.data(), 2);
+			str.remove_prefix(1);
+		}
 		// Exclude unpaired surrogates and NO-BREAK spaces NBSP and NUMSP
 		else if ((wc < 0xd800 || wc >= 0xe000) && (iswgraph(wc) && wc != 0xA0 && wc != 0x2007 && wc != 0x2000 && wc != 0xfffd))
 			ws << wc;

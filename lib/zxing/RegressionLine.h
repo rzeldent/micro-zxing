@@ -6,10 +6,10 @@
 #pragma once
 
 #include "Point.h"
+#include "ZXAlgorithms.h"
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
 #include <vector>
 
 #ifdef PRINT_DEBUG
@@ -29,7 +29,7 @@ protected:
 
 	template<typename T> bool evaluate(const PointT<T>* begin, const PointT<T>* end)
 	{
-		auto mean = std::accumulate(begin, end, PointF()) / std::distance(begin, end);
+		auto mean = Reduce(begin, end, PointF()) / std::distance(begin, end);
 		PointF::value_t sumXX = 0, sumYY = 0, sumXY = 0;
 		for (auto p = begin; p != end; ++p) {
 			auto d = *p - mean;
@@ -78,6 +78,7 @@ public:
 	auto signedDistance(PointF p) const { return dot(normal(), p) - c; }
 	template <typename T> auto distance(PointT<T> p) const { return std::abs(signedDistance(PointF(p))); }
 	PointF project(PointF p) const { return p - signedDistance(p) * normal(); }
+	PointF centroid() const { return Reduce(_points) / _points.size(); }
 
 	void reset()
 	{
@@ -94,6 +95,11 @@ public:
 	}
 
 	void pop_back() { _points.pop_back(); }
+	void pop_front()
+	{
+		std::rotate(_points.begin(), _points.begin() + 1, _points.end());
+		_points.pop_back();
+	}
 
 	void setDirectionInward(PointF d) { _directionInward = normalized(d); }
 
@@ -105,15 +111,26 @@ public:
 			while (true) {
 				auto old_points_size = points.size();
 				// remove points that are further 'inside' than maxSignedDist or further 'outside' than 2 x maxSignedDist
+#ifdef __cpp_lib_erase_if
+				std::erase_if(points, [this, maxSignedDist](auto p) {
+					auto sd = this->signedDistance(p);
+					return sd > maxSignedDist || sd < -2 * maxSignedDist;
+				});
+#else
 				auto end = std::remove_if(points.begin(), points.end(), [this, maxSignedDist](auto p) {
 					auto sd = this->signedDistance(p);
-                    return sd > maxSignedDist || sd < -2 * maxSignedDist;
+					return sd > maxSignedDist || sd < -2 * maxSignedDist;
 				});
 				points.erase(end, points.end());
+#endif
+				// if we threw away too many points, something is off with the line to begin with
+				if (points.size() < old_points_size / 2 || points.size() < 2)
+					return false;
 				if (old_points_size == points.size())
 					break;
 #ifdef PRINT_DEBUG
-				printf("removed %zu points\n", old_points_size - points.size());
+				printf("removed %zu points -> %zu remaining\n", old_points_size - points.size(), points.size());
+				fflush(stdout);
 #endif
 				ret = evaluate(points);
 			}
@@ -128,10 +145,8 @@ public:
 	{
 		PointF min = _points.front(), max = _points.front();
 		for (auto p : _points) {
-			min.x = std::min(min.x, p.x);
-			min.y = std::min(min.y, p.y);
-			max.x = std::max(max.x, p.x);
-			max.y = std::max(max.y, p.y);
+			UpdateMinMax(min.x, max.x, p.x);
+			UpdateMinMax(min.y, max.y, p.y);
 		}
 		auto diff  = max - min;
 		auto len   = maxAbsComponent(diff);

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "BitHacks.h"
 #include "Range.h"
 #include "ZXAlgorithms.h"
 
@@ -14,12 +15,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <numeric>
 #include <vector>
 
 namespace ZXing {
 
-using PatternRow = std::vector<uint16_t>;
+using PatternType = uint16_t;
+template<int N> using Pattern = std::array<PatternType, N>;
+using PatternRow = std::vector<PatternType>;
 
 class PatternView
 {
@@ -43,7 +45,7 @@ public:
 	PatternView(Iterator data, int size, Iterator base, Iterator end) : _data(data), _size(size), _base(base), _end(end) {}
 
 	template <size_t N>
-	PatternView(const std::array<value_type, N>& row) : _data(row.data()), _size(N)
+	PatternView(const Pattern<N>& row) : _data(row.data()), _size(N)
 	{}
 
 	Iterator data() const { return _data; }
@@ -56,13 +58,13 @@ public:
 		return _data[i];
 	}
 
-	int sum(int n = 0) const { return std::accumulate(_data, _data + (n == 0 ? _size : n), 0); }
+	int sum(int n = 0) const { return Reduce(_data, _data + (n == 0 ? _size : n)); }
 	int size() const { return _size; }
 
 	// index is the number of bars and spaces from the first bar to the current position
 	int index() const { return narrow_cast<int>(_data - _base) - 1; }
-	int pixelsInFront() const { return std::accumulate(_base, _data, 0); }
-	int pixelsTillEnd() const { return std::accumulate(_base, _data + _size, 0) - 1; }
+	int pixelsInFront() const { return Reduce(_base, _data); }
+	int pixelsTillEnd() const { return Reduce(_base, _data + _size) - 1; }
 	bool isAtFirstBar() const { return _data == _base + 1; }
 	bool isAtLastBar() const { return _data + _size == _end - 1; }
 	bool isValid(int n) const { return _data && _data >= _base && _data + n <= _end; }
@@ -129,19 +131,28 @@ struct BarAndSpace
 	using value_type = T;
 	T bar = {}, space = {};
 	// even index -> bar, odd index -> space
-	T& operator[](int i) { return reinterpret_cast<T*>(this)[i & 1]; }
-	T operator[](int i) const { return reinterpret_cast<const T*>(this)[i & 1]; }
+	constexpr T& operator[](int i) noexcept { return reinterpret_cast<T*>(this)[i & 1]; }
+	constexpr T operator[](int i) const noexcept { return reinterpret_cast<const T*>(this)[i & 1]; }
 	bool isValid() const { return bar != T{} && space != T{}; }
 };
 
-using BarAndSpaceI = BarAndSpace<PatternView::value_type>;
+using BarAndSpaceI = BarAndSpace<PatternType>;
+
+template <int LEN, typename RT, typename T>
+constexpr auto BarAndSpaceSum(const T* view) noexcept
+{
+	BarAndSpace<RT> res;
+	for (int i = 0; i < LEN; ++i)
+		res[i] += view[i];
+	return res;
+}
 
 /**
  * @brief FixedPattern describes a compile-time constant (start/stop) pattern.
  *
- * @param N  number of bars/spaces
- * @param SUM  sum over all N elements (size of pattern in modules)
- * @param IS_SPARCE  whether or not the pattern contains '0's denoting 'wide' bars/spaces
+ * N = number of bars/spaces
+ * SUM = sum over all N elements (size of pattern in modules)
+ * IS_SPARCE = whether or not the pattern contains '0's denoting 'wide' bars/spaces
  */
 template <int N, int SUM, bool IS_SPARCE = false>
 struct FixedPattern
@@ -151,20 +162,42 @@ struct FixedPattern
 	constexpr value_type operator[](int i) const noexcept { return _data[i]; }
 	constexpr const value_type* data() const noexcept { return _data; }
 	constexpr int size() const noexcept { return N; }
+	constexpr BarAndSpace<value_type> sums() const noexcept { return BarAndSpaceSum<N, value_type>(_data); }
 };
 
 template <int N, int SUM>
 using FixedSparcePattern = FixedPattern<N, SUM, true>;
 
-template <bool RELAXED_THRESHOLD = false, int N, int SUM>
-float IsPattern(const PatternView& view, const FixedPattern<N, SUM, false>& pattern, int spaceInPixel = 0,
-				float minQuietZone = 0, float moduleSizeRef = 0)
+template <bool E2E = false, int LEN, int SUM>
+double IsPattern(const PatternView& view, const FixedPattern<LEN, SUM, false>& pattern, int spaceInPixel = 0,
+				double minQuietZone = 0, double moduleSizeRef = 0)
 {
-	int width = view.sum(N);
-	if (SUM > N && width < SUM)
+	if constexpr (E2E) {
+		auto widths = BarAndSpaceSum<LEN, double>(view.data());
+		auto sums = pattern.sums();
+		BarAndSpace<double> modSize = {widths[0] / sums[0], widths[1] / sums[1]};
+
+		auto [m, M] = std::minmax(modSize[0], modSize[1]);
+		if (M > 4 * m) // make sure module sizes of bars and spaces are not too far away from each other
+			return 0;
+
+		if (minQuietZone && spaceInPixel < minQuietZone * modSize.space)
+			return 0;
+
+		const BarAndSpace<double> thr = {modSize[0] * .75 + .5, modSize[1] * .5 + .5};
+
+		for (int x = 0; x < LEN; ++x)
+			if (std::abs(view[x] - pattern[x] * modSize[x]) > thr[x])
+				return 0;
+
+		return (modSize[0] + modSize[1]) / 2;
+	}
+
+	double width = view.sum(LEN);
+	if (SUM > LEN && width < SUM)
 		return 0;
 
-	const float moduleSize = (float)width / SUM;
+	const auto moduleSize = width / SUM;
 
 	if (minQuietZone && spaceInPixel < minQuietZone * moduleSize - 1)
 		return 0;
@@ -174,9 +207,9 @@ float IsPattern(const PatternView& view, const FixedPattern<N, SUM, false>& patt
 
 	// the offset of 0.5 is to make the code less sensitive to quantization errors for small (near 1) module sizes.
 	// TODO: review once we have upsampling in the binarizer in place.
-	const float threshold = moduleSizeRef * (0.5f + RELAXED_THRESHOLD * 0.25f) + 0.5f;
+	const auto threshold = moduleSizeRef * (0.5 + E2E * 0.25) + 0.5;
 
-	for (int x = 0; x < N; ++x)
+	for (int x = 0; x < LEN; ++x)
 		if (std::abs(view[x] - pattern[x] * moduleSizeRef) > threshold)
 			return 0;
 
@@ -184,15 +217,15 @@ float IsPattern(const PatternView& view, const FixedPattern<N, SUM, false>& patt
 }
 
 template <bool RELAXED_THRESHOLD = false, int N, int SUM>
-float IsPattern(const PatternView& view, const FixedPattern<N, SUM, true>& pattern, int spaceInPixel = 0,
-				float minQuietZone = 0, float moduleSizeRef = 0)
+double IsPattern(const PatternView& view, const FixedPattern<N, SUM, true>& pattern, int spaceInPixel = 0,
+				 double minQuietZone = 0, double moduleSizeRef = 0)
 {
 	// pattern contains the indices with the bars/spaces that need to be equally wide
-	int width = 0;
+	double width = 0;
 	for (int x = 0; x < SUM; ++x)
 		width += view[pattern[x]];
 
-	const float moduleSize = (float)width / SUM;
+	const auto moduleSize = width / SUM;
 
 	if (minQuietZone && spaceInPixel < minQuietZone * moduleSize - 1)
 		return 0;
@@ -202,7 +235,7 @@ float IsPattern(const PatternView& view, const FixedPattern<N, SUM, true>& patte
 
 	// the offset of 0.5 is to make the code less sensitive to quantization errors for small (near 1) module sizes.
 	// TODO: review once we have upsampling in the binarizer in place.
-	const float threshold = moduleSizeRef * (0.5f + RELAXED_THRESHOLD * 0.25f) + 0.5f;
+	const auto threshold = moduleSizeRef * (0.5 + RELAXED_THRESHOLD * 0.25) + 0.5;
 
 	for (int x = 0; x < SUM; ++x)
 		if (std::abs(view[pattern[x]] - moduleSizeRef) > threshold)
@@ -212,8 +245,8 @@ float IsPattern(const PatternView& view, const FixedPattern<N, SUM, true>& patte
 }
 
 template <int N, int SUM, bool IS_SPARCE>
-bool IsRightGuard(const PatternView& view, const FixedPattern<N, SUM, IS_SPARCE>& pattern, float minQuietZone,
-				  float moduleSizeRef = 0.f)
+bool IsRightGuard(const PatternView& view, const FixedPattern<N, SUM, IS_SPARCE>& pattern, double minQuietZone,
+				  double moduleSizeRef = 0)
 {
 	int spaceInPixel = view.isAtLastBar() ? std::numeric_limits<int>::max() : *view.end();
 	return IsPattern(view, pattern, spaceInPixel, minQuietZone, moduleSizeRef) != 0;
@@ -237,7 +270,7 @@ PatternView FindLeftGuard(const PatternView& view, int minSize, Pred isGuard)
 
 template <int LEN, int SUM, bool IS_SPARCE>
 PatternView FindLeftGuard(const PatternView& view, int minSize, const FixedPattern<LEN, SUM, IS_SPARCE>& pattern,
-						  float minQuietZone)
+						  double minQuietZone)
 {
 	return FindLeftGuard<LEN>(view, std::max(minSize, LEN),
 							  [&pattern, minQuietZone](const PatternView& window, int spaceInPixel) {
@@ -245,16 +278,32 @@ PatternView FindLeftGuard(const PatternView& view, int minSize, const FixedPatte
 							  });
 }
 
+template <int LEN>
+std::array<int, LEN - 2> NormalizedE2EPattern(const PatternView& view, int mods, bool reverse = false)
+{
+	double moduleSize = static_cast<double>(view.sum(LEN)) / mods;
+	std::array<int, LEN - 2> e2e;
+
+	for (int i = 0; i < LEN - 2; i++) {
+		int i_v = reverse ? LEN - 2 - i : i;
+		double v = (view[i_v] + view[i_v + 1]) / moduleSize;
+		e2e[i] = int(v + .5);
+	}
+
+	return e2e;
+}
+
 template <int LEN, int SUM>
 std::array<int, LEN> NormalizedPattern(const PatternView& view)
 {
-	float moduleSize = static_cast<float>(view.sum(LEN)) / SUM;
+	double moduleSize = static_cast<double>(view.sum(LEN)) / SUM;
+#if 1
 	int err = SUM;
 	std::array<int, LEN> is;
-	std::array<float, LEN> rs;
+	std::array<double, LEN> rs;
 	for (int i = 0; i < LEN; i++) {
-		float v = view[i] / moduleSize;
-		is[i] = int(v + .5f);
+		double v = view[i] / moduleSize;
+		is[i] = int(v + .5);
 		rs[i] = v - is[i];
 		err -= is[i];
 	}
@@ -268,7 +317,25 @@ std::array<int, LEN> NormalizedPattern(const PatternView& view)
 		is[mi] += err;
 		rs[mi] -= err;
 	}
+#else
+	std::array<int, LEN> is, e2e;
+	int min_v = view[0], min_i = 0;
 
+	for (int i = 1; i < LEN; i++) {
+		double v = (view[i - 1] + view[i]) / moduleSize;
+		e2e[i] = int(v + .5);
+		if (view[i] < min_v) {
+			min_v = view[i];
+			min_i = i;
+		}
+	}
+
+	is[min_i] = 1;
+	for (int i = min_i + 1; i < LEN; ++i)
+		is[i] = e2e[i] - is[i - 1];
+	for (int i = min_i - 1; i >= 0; --i)
+		is[i] = e2e[i + 1] - is[i + 1];
+#endif
 	return is;
 }
 
@@ -300,12 +367,36 @@ void GetPatternRow(Range<I> b_row, PatternRow& p_row)
 	std::fill(p_row.begin(), p_row.end(), 0);
 
 	auto bitPos = b_row.begin();
+	const auto bitPosEnd = b_row.end();
 	auto intPos = p_row.data();
 
 	if (*bitPos)
 		intPos++; // first value is number of white pixels, here 0
 
-	while (++bitPos < b_row.end()) {
+	// The following code as been observed to cause a speedup of up to 30% on large images on an AVX cpu
+	// and on an a Google Pixel 3 Android phone. Your mileage may vary.
+	if constexpr (std::is_pointer_v<I> && sizeof(I) == 8 && sizeof(std::remove_pointer_t<I>) == 1) {
+		using simd_t = uint64_t;
+		while (bitPos < bitPosEnd - sizeof(simd_t)) {
+			auto asSimd0 = BitHacks::LoadU<simd_t>(bitPos);
+			auto asSimd1 = BitHacks::LoadU<simd_t>(bitPos + 1);
+			auto z = asSimd0 ^ asSimd1;
+			if (z) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+				int step = BitHacks::NumberOfTrailingZeros(z) / 8 + 1;
+#else
+				int step = BitHacks::NumberOfLeadingZeros(z) / 8 + 1;
+#endif
+				(*intPos++) += step;
+				bitPos += step;
+			} else {
+				(*intPos) += sizeof(simd_t);
+				bitPos += sizeof(simd_t);
+			}
+		}
+	}
+
+	while (++bitPos != bitPosEnd) {
 		++(*intPos);
 		intPos += bitPos[0] != bitPos[-1];
 	}

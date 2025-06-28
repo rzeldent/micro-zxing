@@ -12,6 +12,12 @@
 #include "Utf.h"
 #include "ZXAlgorithms.h"
 
+#if !defined(ZXING_READERS) && !defined(ZXING_WRITERS)
+#include "Version.h"
+#endif
+
+#include <cctype>
+
 namespace ZXing {
 
 std::string ToString(ContentType type)
@@ -75,15 +81,15 @@ void Content::erase(int pos, int n)
 	bytes.erase(bytes.begin() + pos, bytes.begin() + pos + n);
 	for (auto& e : encodings)
 		if (e.pos > pos)
-			pos -= n;
+			e.pos -= n;
 }
 
-void Content::insert(int pos, const std::string& str)
+void Content::insert(int pos, std::string_view str)
 {
 	bytes.insert(bytes.begin() + pos, str.begin(), str.end());
 	for (auto& e : encodings)
 		if (e.pos > pos)
-			pos += Size(str);
+			e.pos += Size(str);
 }
 
 bool Content::canProcess() const
@@ -96,44 +102,46 @@ std::string Content::render(bool withECI) const
 	if (empty() || !canProcess())
 		return {};
 
+#ifdef ZXING_READERS
 	std::string res;
+	res.reserve(bytes.size() * 2);
 	if (withECI)
-		res = symbology.toString(true);
+		res += symbology.toString(true);
 	ECI lastECI = ECI::Unknown;
 	auto fallbackCS = defaultCharset;
 	if (!hasECI && fallbackCS == CharacterSet::Unknown)
 		fallbackCS = guessEncoding();
 
 	ForEachECIBlock([&](ECI eci, int begin, int end) {
-		// first determine how to decode the content (choose character set)
-		//  * eci == ECI::Unknown implies !hasECI and we guess
-		//  * if !IsText(eci) the ToCharcterSet(eci) will return Unknown and we decode as binary
-		CharacterSet cs = eci == ECI::Unknown ? fallbackCS : ToCharacterSet(eci);
-
+		// basic idea: if IsText(eci), we transcode it to UTF8, otherwise we treat it as binary but
+		// transcoded it to valid UTF8 bytes seqences representing the code points 0-255. The eci we report
+		// back to the caller by inserting their "\XXXXXX" ECI designator is UTF8 for text and
+		// the original ECI for everything else.
+		// first determine how to decode the content (use fallback if unknown)
+		auto inEci = IsText(eci) ? eci : eci == ECI::Unknown ? ToECI(fallbackCS) : ECI::Binary;
 		if (withECI) {
 			// then find the eci to report back in the ECI designator
-			if (IsText(ToECI(cs))) // everything decoded as text is reported as utf8
-				eci = ECI::UTF8;
-			else if (eci == ECI::Unknown) // implies !hasECI and fallbackCS is Unknown or Binary
-				eci = ECI::Binary;
+			auto outEci = IsText(inEci) ? ECI::UTF8 : eci;
 
-			if (lastECI != eci)
-				res += ToString(eci);
-			lastECI = eci;
+			if (lastECI != outEci)
+				res += ToString(outEci);
+			lastECI = outEci;
 
-			std::string tmp;
-			TextDecoder::Append(tmp, bytes.data() + begin, end - begin, cs);
-			for (auto c : tmp) {
+			for (auto c : BytesToUtf8(bytes.asView(begin, end - begin), inEci)) {
 				res += c;
-				if (c == '\\') // in the ECI protocol a '\' has to be doubled
+				if (c == '\\') // in the ECI protocol a '\' (0x5c) has to be doubled, works only because 0x5c can only mean `\`
 					res += c;
 			}
 		} else {
-			TextDecoder::Append(res, bytes.data() + begin, end - begin, cs);
+			res += BytesToUtf8(bytes.asView(begin, end - begin), inEci);
 		}
 	});
 
 	return res;
+#else
+	//TODO: replace by proper construction from encoded data from within zint
+	return std::string(bytes.asString());
+#endif
 }
 
 std::string Content::text(TextMode mode) const
@@ -143,6 +151,7 @@ std::string Content::text(TextMode mode) const
 	case TextMode::ECI: return render(true);
 	case TextMode::HRI:
 		switch (type()) {
+#ifdef ZXING_READERS
 		case ContentType::GS1: {
 			auto plain = render(false);
 			auto hri = HRIFromGS1(plain);
@@ -150,6 +159,7 @@ std::string Content::text(TextMode mode) const
 		}
 		case ContentType::ISO15434: return HRIFromISO15434(render(false));
 		case ContentType::Text: return render(false);
+#endif
 		default: return text(TextMode::Escaped);
 		}
 	case TextMode::Hex: return ToHex(bytes);
@@ -169,40 +179,52 @@ ByteArray Content::bytesECI() const
 	if (empty())
 		return {};
 
-	std::string res = symbology.toString(true);
+	ByteArray res;
+	res.reserve(3 + bytes.size() + hasECI * encodings.size() * 7);
 
-	ForEachECIBlock([&](ECI eci, int begin, int end) {
-		if (hasECI)
-			res += ToString(eci);
+	// report ECI protocol only if actually found ECI data in the barode bit stream
+	// see also https://github.com/zxing-cpp/zxing-cpp/issues/936
+	res.append(symbology.toString(hasECI));
 
-		for (int i = begin; i != end; ++i) {
-			char c = static_cast<char>(bytes[i]);
-			res += c;
-			if (c == '\\') // in the ECI protocol a '\' has to be doubled
-				res += c;
-		}
-	});
+	if (hasECI)
+		ForEachECIBlock([&](ECI eci, int begin, int end) {
+			if (hasECI)
+				res.append(ToString(eci));
 
-	return ByteArray(res);
+			for (auto b : bytes.asView(begin, end - begin)) {
+				res.push_back(b);
+				if (b == '\\') // in the ECI protocol a '\' has to be doubled
+					res.push_back(b);
+			}
+		});
+	else
+		res.append(bytes);
+
+	return res;
 }
 
 CharacterSet Content::guessEncoding() const
 {
+#ifdef ZXING_READERS
 	// assemble all blocks with unknown encoding
 	ByteArray input;
 	ForEachECIBlock([&](ECI eci, int begin, int end) {
 		if (eci == ECI::Unknown)
-			input.insert(input.end(), bytes.begin() + begin, bytes.begin() + end);
+			input.append(bytes.asView(begin, end - begin));
 	});
 
 	if (input.empty())
 		return CharacterSet::Unknown;
 
-	return TextDecoder::GuessEncoding(input.data(), input.size(), CharacterSet::ISO8859_1);
+	return GuessTextEncoding(input);
+#else
+	return CharacterSet::ISO8859_1;
+#endif
 }
 
 ContentType Content::type() const
 {
+#if 1 //def ZXING_READERS
 	if (empty())
 		return ContentType::Text;
 
@@ -224,7 +246,7 @@ ContentType Content::type() const
 		binaryECIs.push_back((!IsText(eci)
 							  || (ToInt(eci) > 0 && ToInt(eci) < 28 && ToInt(eci) != 25
 								  && std::any_of(bytes.begin() + begin, bytes.begin() + end,
-												 [](auto c) { return c < 0x20 && c != 0xa && c != 0xd; }))));
+												 [](auto c) { return c < 0x20 && c != 0x9 && c != 0xa && c != 0xd; }))));
 	});
 
 	if (!Contains(binaryECIs, true))
@@ -233,6 +255,10 @@ ContentType Content::type() const
 		return ContentType::Binary;
 
 	return ContentType::Mixed;
+#else
+	//TODO: replace by proper construction from encoded data from within zint
+	return ContentType::Text;
+#endif
 }
 
 } // namespace ZXing
