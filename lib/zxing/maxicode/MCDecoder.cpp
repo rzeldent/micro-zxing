@@ -144,7 +144,7 @@ static std::string GetPostCode2(const ByteArray& bytes)
 	unsigned int len = GetPostCode2Length(bytes);
 	// Pad or truncate to length
 	char buf[11]; // 30 bits 0x3FFFFFFF == 1073741823 (10 digits)
-	sprintf(buf, "%0*d", len, val);
+	snprintf(buf, sizeof(buf), "%0*d", len, val);
 	buf[len] = '\0';
 	return buf;
 }
@@ -276,10 +276,8 @@ DecoderResult Decode(ByteArray&& bytes, const int mode)
 		auto country  = ToString(GetCountry(bytes), 3);
 		auto service  = ToString(GetServiceClass(bytes), 3);
 		GetMessage(bytes, 10, 84, result, sai);
-		if (result.bytes.asString().compare(0, 7, "[)>\u001E01\u001D") == 0) // "[)>" + RS + "01" + GS
-			result.insert(9, postcode + GS + country + GS + service + GS);
-		else
-			result.insert(0, postcode + GS + country + GS + service + GS);
+		result.insert(result.bytes.asString().compare(0, 7, "[)>\u001E01\u001D") == 0 ? 9 : 0, // "[)>" + RS + "01" + GS
+					  postcode + GS + country + GS + service + GS);
 		break;
 	}
 	case 4:

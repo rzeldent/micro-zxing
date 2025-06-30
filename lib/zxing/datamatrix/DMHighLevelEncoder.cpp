@@ -19,7 +19,6 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
-#include <numeric>
 #include <stdexcept>
 #include <string>
 
@@ -31,10 +30,6 @@ static const uint8_t MACRO_05 = 236;
 static const uint8_t MACRO_06 = 237;
 static const uint8_t C40_UNLATCH = 254;
 static const uint8_t X12_UNLATCH = 254;
-
-static const std::wstring MACRO_05_HEADER = L"[)>\x1E""05\x1D";
-static const std::wstring MACRO_06_HEADER = L"[)>\x1E""06\x1D";
-static const std::wstring MACRO_TRAILER = L"\x1E\x04";
 
 enum
 {
@@ -845,19 +840,20 @@ namespace Base256Encoder {
 
 } // Base256Encoder
 
-static bool StartsWith(const std::wstring& s, const std::wstring& ss)
+//TODO: c++20
+static bool StartsWith(std::wstring_view s, std::wstring_view ss)
 {
 	return s.length() > ss.length() && s.compare(0, ss.length(), ss) == 0;
 }
 
-static bool EndsWith(const std::wstring& s, const std::wstring& ss)
+static bool EndsWith(std::wstring_view s, std::wstring_view ss)
 {
 	return s.length() > ss.length() && s.compare(s.length() - ss.length(), ss.length(), ss) == 0;
 }
 
 ByteArray Encode(const std::wstring& msg)
 {
-	return Encode(msg, SymbolShape::NONE, -1, -1, -1, -1);
+	return Encode(msg, CharacterSet::ISO8859_1, SymbolShape::NONE, -1, -1, -1, -1);
 }
 
 /**
@@ -871,7 +867,7 @@ ByteArray Encode(const std::wstring& msg)
 * @param maxSize the maximum symbol size constraint or null for no constraint
 * @return the encoded message (the char values range from 0 to 255)
 */
-ByteArray Encode(const std::wstring& msg, SymbolShape shape, int minWidth, int minHeight, int maxWidth, int maxHeight)
+ByteArray Encode(const std::wstring& msg, CharacterSet charset, SymbolShape shape, int minWidth, int minHeight, int maxWidth, int maxHeight)
 {
 	//the codewords 0..255 are encoded as Unicode characters
 	//Encoder[] encoders = {
@@ -879,9 +875,17 @@ ByteArray Encode(const std::wstring& msg, SymbolShape shape, int minWidth, int m
 	//	new X12Encoder(), new EdifactEncoder(),  new Base256Encoder()
 	//};
 
-	EncoderContext context(TextEncoder::FromUnicode(msg, CharacterSet::ISO8859_1));
+	if (charset == CharacterSet::Unknown) {
+		charset = CharacterSet::ISO8859_1;
+	}
+
+	EncoderContext context(TextEncoder::FromUnicode(msg, charset));
 	context.setSymbolShape(shape);
 	context.setSizeConstraints(minWidth, minHeight, maxWidth, maxHeight);
+
+	constexpr std::wstring_view MACRO_05_HEADER = L"[)>\x1E""05\x1D";
+	constexpr std::wstring_view MACRO_06_HEADER = L"[)>\x1E""06\x1D";
+	constexpr std::wstring_view MACRO_TRAILER = L"\x1E\x04";
 
 	if (StartsWith(msg, MACRO_05_HEADER) && EndsWith(msg, MACRO_TRAILER)) {
 		context.addCodeword(MACRO_05);

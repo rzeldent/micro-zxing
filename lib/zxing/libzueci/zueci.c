@@ -20,7 +20,7 @@
 #include "zueci_ksx1001.h"
 #include "zueci_sjis.h"
 
-/* Whether codepoint `u`  valid Unicode */
+/* Whether codepoint `u` valid Unicode */
 #define ZUECI_IS_VALID_UNICODE(u) ((u) < 0xD800 || ((u) >= 0xE000 && (u) <= 0x10FFFF))
 
 /* Put 4 bytes into `zueci_u32` */
@@ -103,6 +103,7 @@ static int zueci_is_valid_utf8(const unsigned char src[], const int len) {
     return state == 0;
 }
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Convert Unicode codepoint `u` to UTF-8 `dest`, returning UTF-8 length */
 static int zueci_encode_utf8(const zueci_u32 u, unsigned char *dest) {
     if (u < 0x80) {
@@ -126,7 +127,9 @@ static int zueci_encode_utf8(const zueci_u32 u, unsigned char *dest) {
     dest[3] = (unsigned char) (0x80 | (u & 0x3F));
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Returns the number of times a character occurs in a string */
 static int zueci_chr_cnt(const unsigned char src[], const int len, const unsigned char c) {
     int count = 0;
@@ -154,7 +157,9 @@ static int zueci_chr_lte_cnt(const unsigned char src[], const int len, const uns
     }
     return count;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Helper to return source increment on using replacement character */
 static int zueci_replacement_incr(const int eci, const unsigned char *src, const zueci_u32 len) {
     assert(len);
@@ -181,9 +186,11 @@ static int zueci_replacement_incr(const int eci, const unsigned char *src, const
     }
     return 2;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 /* Single-byte & UTF-16/32 stuff */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECIs 0 and 2 (bottom half ASCII, top half IBM CP 437) */
 static int zueci_u_cp437(const zueci_u32 u, unsigned char *dest) {
     int s, e;
@@ -207,7 +214,9 @@ static int zueci_u_cp437(const zueci_u32 u, unsigned char *dest) {
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECIs 0 and 2 ASCII/CP 437 to Unicode */
 static int zueci_cp437_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     const unsigned char c = *src;
@@ -219,7 +228,9 @@ static int zueci_cp437_u(const unsigned char *src, const zueci_u32 len, const un
     *p_u = zueci_cp437_u_u[(int) zueci_cp437_sb_u[c - 0x80]]; /* No undefined */
     return 1;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Base ISO/IEC 8859 routine to convert Unicode codepoint `u` */
 static int zueci_u_iso8859(const zueci_u32 u, const zueci_u16 *tab_s, const zueci_u16 *tab_u_u,
             const unsigned char *tab_u_sb, int e, unsigned char *dest) {
@@ -253,7 +264,9 @@ static int zueci_u_iso8859(const zueci_u32 u, const zueci_u16 *tab_s, const zuec
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Base ISO/IEC 8859 routine to convert single-byte `c` */
 static int zueci_iso8859_u(const unsigned char c, const unsigned int flags, const zueci_u16 *tab_s,
             const zueci_u16 *tab_u_u, const char *tab_sb_u, const int c2_max, zueci_u32 *p_u) {
@@ -281,7 +294,9 @@ static int zueci_iso8859_u(const unsigned char c, const unsigned int flags, cons
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Base Windows-125x routine to convert Unicode codepoint `u` */
 static int zueci_u_cp125x(const zueci_u32 u, const zueci_u16 *tab_s, const zueci_u16 *tab_u_u,
             const unsigned char *tab_u_sb, int e, unsigned char *dest) {
@@ -312,7 +327,9 @@ static int zueci_u_cp125x(const zueci_u32 u, const zueci_u16 *tab_s, const zueci
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Base Windows-125x routine to convert single-byte `c` */
 static int zueci_cp125x_u(const unsigned char c, const unsigned int flags, const zueci_u16 *tab_s,
             const zueci_u16 *tab_u_u, const char *tab_sb_u, const int c_max, zueci_u32 *p_u) {
@@ -338,7 +355,9 @@ static int zueci_cp125x_u(const unsigned char c, const unsigned int flags, const
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 27 ASCII (ISO/IEC 646:1991 IRV (US)) */
 static int zueci_u_ascii(const zueci_u32 u, unsigned char *dest) {
     if (u < 0x80) {
@@ -347,7 +366,9 @@ static int zueci_u_ascii(const zueci_u32 u, unsigned char *dest) {
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 27 ASCII to Unicode */
 static int zueci_ascii_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     (void)len;
@@ -357,7 +378,9 @@ static int zueci_ascii_u(const unsigned char *src, const zueci_u32 len, const un
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 170 ISO/IEC 646:1991 Invariant, ASCII subset that excludes 12 chars that historically had
    national variants, namely "#$@[\]^`{|}~" */
 static int zueci_u_ascii_inv(const zueci_u32 u, unsigned char *dest) {
@@ -367,7 +390,9 @@ static int zueci_u_ascii_inv(const zueci_u32 u, unsigned char *dest) {
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 170 ISO/IEC 646:1991 Invariant to Unicode */
 static int zueci_ascii_inv_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
             zueci_u32 *p_u) {
@@ -380,7 +405,9 @@ static int zueci_ascii_inv_u(const unsigned char *src, const zueci_u32 len, cons
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 25 UTF-16 Big Endian (ISO/IEC 10646) - assumes valid Unicode */
 static int zueci_u_utf16be(const zueci_u32 u, unsigned char *dest) {
     zueci_u32 u2, v;
@@ -398,7 +425,9 @@ static int zueci_u_utf16be(const zueci_u32 u, unsigned char *dest) {
     dest[3] = (unsigned char) v;
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 25 UTF-16 Big Endian to Unicode */
 static int zueci_utf16be_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     zueci_u16 u1, u2;
@@ -422,7 +451,9 @@ static int zueci_utf16be_u(const unsigned char *src, const zueci_u32 len, const 
     return 4;
 
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 33 UTF-16 Little Endian (ISO/IEC 10646) - assumes valid Unicode */
 static int zueci_u_utf16le(const zueci_u32 u, unsigned char *dest) {
     zueci_u32 u2, v;
@@ -440,7 +471,9 @@ static int zueci_u_utf16le(const zueci_u32 u, unsigned char *dest) {
     dest[3] = (unsigned char) (0xDC + (v >> 8));
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 33 UTF-16 Little Endian to Unicode */
 static int zueci_utf16le_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     zueci_u16 u1, u2;
@@ -464,7 +497,9 @@ static int zueci_utf16le_u(const unsigned char *src, const zueci_u32 len, const 
     return 4;
 
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 34 UTF-32 Big Endian (ISO/IEC 10646) - assumes valid Unicode */
 static int zueci_u_utf32be(const zueci_u32 u, unsigned char *dest) {
     dest[0] = 0;
@@ -473,8 +508,9 @@ static int zueci_u_utf32be(const zueci_u32 u, unsigned char *dest) {
     dest[3] = (unsigned char) u;
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
-
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 34 UTF-32 Big Endian to Unicode */
 static int zueci_utf32be_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     zueci_u32 u;
@@ -489,7 +525,9 @@ static int zueci_utf32be_u(const unsigned char *src, const zueci_u32 len, const 
     *p_u = u;
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 35 UTF-32 Little Endian (ISO/IEC 10646) - assumes valid Unicode */
 static int zueci_u_utf32le(const zueci_u32 u, unsigned char *dest) {
     dest[0] = (unsigned char) u;
@@ -498,7 +536,9 @@ static int zueci_u_utf32le(const zueci_u32 u, unsigned char *dest) {
     dest[3] = 0;
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 35 UTF-32 Little Endian to Unicode */
 static int zueci_utf32le_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     zueci_u32 u;
@@ -513,7 +553,9 @@ static int zueci_utf32le_u(const unsigned char *src, const zueci_u32 len, const 
     *p_u = u;
     return 4;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 899 Binary */
 static int zueci_u_binary(const zueci_u32 u, unsigned char *dest) {
     if (u <= 0xFF) {
@@ -522,11 +564,13 @@ static int zueci_u_binary(const zueci_u32 u, unsigned char *dest) {
     }
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
 /* Multibyte stuff */
 
 /* Acknowledgements to Bruno Haible <bruno@clisp.org> for a no. of techniques used here */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Helper to lookup Unicode codepoint `u` in the URO (Unified Repertoire and Ordering) block (U+4E00-9FFF) */
 static int zueci_u_lookup_uro(const zueci_u32 u, const zueci_u16 *tab_u_u, const zueci_u16 *tab_mb_ind,
             const zueci_u16 *tab_u_mb, unsigned char *dest) {
@@ -599,7 +643,9 @@ ZUECI_INTERN int zueci_u_sjis_test(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_sjis(u, dest);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 20 Shift JIS to Unicode */
 static int zueci_sjis_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     unsigned char c1, c2;
@@ -647,7 +693,9 @@ ZUECI_INTERN int zueci_sjis_u_test(const unsigned char *src, const zueci_u32 len
     return zueci_sjis_u(src, len, flags, p_u);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 28 Big5 Chinese (Taiwan) */
 static int zueci_u_big5(const zueci_u32 u, unsigned char *dest) {
     int s, e;
@@ -688,7 +736,9 @@ ZUECI_INTERN int zueci_u_big5_test(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_big5(u, dest);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 28 Big5 to Unicode */
 static int zueci_big5_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     unsigned char c1, c2;
@@ -724,7 +774,9 @@ ZUECI_INTERN int zueci_big5_u_test(const unsigned char *src, const zueci_u32 len
     return zueci_big5_u(src, len, flags, p_u);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 30 EUC-KR (KS X 1001, formerly KS C 5601) Korean */
 static int zueci_u_ksx1001(const zueci_u32 u, unsigned char *dest) {
     int s, e;
@@ -765,7 +817,9 @@ ZUECI_INTERN int zueci_u_ksx1001_test(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_ksx1001(u, dest);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 30 EUC-KR to Unicode */
 static int zueci_ksx1001_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     unsigned char c1, c2;
@@ -802,7 +856,9 @@ ZUECI_INTERN int zueci_ksx1001_u_test(const unsigned char *src, const zueci_u32 
     return zueci_ksx1001_u(src, len, flags, p_u);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 29 GB 2312 Chinese (PRC) */
 static int zueci_u_gb2312(const zueci_u32 u, unsigned char *dest) {
 
@@ -842,7 +898,9 @@ ZUECI_INTERN int zueci_u_gb2312_test(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_gb2312(u, dest);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 29 GB 2312 to Unicode */
 static int zueci_gb2312_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     unsigned char c1, c2;
@@ -879,7 +937,9 @@ ZUECI_INTERN int zueci_gb2312_u_test(const unsigned char *src, const zueci_u32 l
     return zueci_gb2312_u(src, len, flags, p_u);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode to ECI 31 GBK Chinese */
 static int zueci_u_gbk(const zueci_u32 u, unsigned char *dest) {
     if (u < 0x80) {
@@ -934,7 +994,9 @@ ZUECI_INTERN int zueci_u_gbk_test(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_gbk(u, dest);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI 31 GBK Chinese to Unicode */
 static int zueci_gbk_u(const unsigned char *src, const zueci_u32 len, const unsigned int flags, zueci_u32 *p_u) {
     unsigned char c1, c2;
@@ -1012,7 +1074,9 @@ ZUECI_INTERN int zueci_gbk_u_test(const unsigned char *src, const zueci_u32 len,
     return zueci_gbk_u(src, len, flags, p_u);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Helper for `u_gb18030()` to output 4-byte sequential blocks 0x[81-FE][30-39][81-FE][30-39] */
 static int zueci_u_gb18030_4_sequential(zueci_u32 u2, zueci_u32 mb_lead, unsigned char *dest) {
     zueci_u32 dv;
@@ -1139,7 +1203,9 @@ ZUECI_INTERN int zueci_u_gb18030_test(const zueci_u32 u, unsigned char *dest) {
     return zueci_u_gb18030(u, dest);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Helper to convert GB 18030 4-byter to Unicode */
 static zueci_u32 zueci_gb18030_mb4_u(zueci_u32 mb4) {
     unsigned char c1 = (unsigned char) (mb4 >> 24);
@@ -1265,9 +1331,12 @@ ZUECI_INTERN int zueci_gb18030_u_test(const unsigned char *src, const zueci_u32 
     return zueci_gb18030_u(src, len, flags, p_u);
 }
 #endif
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 /* API */
 
+
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /*
     Convert UTF-8 `src` of length `src_len` to `eci`-encoded `dest`.
     `p_dest_len` is set to length of `dest` on output.
@@ -1396,7 +1465,9 @@ ZUECI_EXTERN int zueci_dest_len_eci(const int eci, const unsigned char src[], co
 
     return 0;
 }
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* ECI to Unicode function table */
 typedef int (*zueci_utf8_func_t)(const unsigned char *src, const zueci_u32 len, const unsigned int flags,
                                     zueci_u32 *p_u);
@@ -1429,7 +1500,7 @@ ZUECI_EXTERN int zueci_eci_to_utf8(const int eci, const unsigned char src[], con
     zueci_u32 u;
     int src_incr;
     unsigned char replacement[5];
-    int replacement_len;
+    int replacement_len = 0; /* g++ complains with "-Wmaybe-uninitialized" if this isn't set */
     int ret = 0;
 
     if (!zueci_is_valid_eci(eci)) {
@@ -1642,5 +1713,6 @@ ZUECI_EXTERN int zueci_dest_len_utf8(const int eci, const unsigned char src[], c
     *p_dest_len = dest_len;
     return ret;
 }
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 /* vim: set ts=4 sw=4 et : */

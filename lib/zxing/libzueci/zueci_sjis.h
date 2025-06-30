@@ -9,6 +9,7 @@
 #ifndef ZUECI_SJIS_H
 #define ZUECI_SJIS_H
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode usage bit-flags for URO (U+4E00-U+9FFF) block */
 static const zueci_u16 zueci_sjis_uro_u[1307] = {
     0x6F8B, 0x43F3, 0x2442, 0x9B46, 0xE82C, 0xE3E0, 0x0004, 0x400A,
@@ -344,7 +345,9 @@ static const zueci_u16 zueci_sjis_uro_mb_ind[1307] = {
      6757,  6760,  6762,  6765,  6767,  6771,  6774,  6782,
      6785,  6786,  6789,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode codepoints sorted */
 static const zueci_u16 zueci_sjis_u_u[588] = {
     0x005C, 0x00A2, 0x00A3, 0x00A5, 0x00A7, 0x00A8, 0x00AC, 0x00B0,
@@ -422,7 +425,9 @@ static const zueci_u16 zueci_sjis_u_u[588] = {
     0xFF96, 0xFF97, 0xFF98, 0xFF99, 0xFF9A, 0xFF9B, 0xFF9C, 0xFF9D,
     0xFF9E, 0xFF9F, 0xFFE3, 0xFFE5,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Multibyte values sorted in Unicode order */
 static const zueci_u16 zueci_sjis_u_mb[6944] = {
     0x815F, 0x8191, 0x8192, 0x005C, 0x8198, 0x814E, 0x81CA, 0x818B,
@@ -1294,7 +1299,9 @@ static const zueci_u16 zueci_sjis_u_mb[6944] = {
     0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7, 0x00D8, 0x00D9,
     0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF, 0x8150, 0x818F,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Unicode values in multibyte order */
 static const zueci_u16 zueci_sjis_mb_u[7808] = {
     0x3000, 0x3001, 0x3002, 0xFF0C, 0xFF0E, 0x30FB, 0xFF1A, 0xFF1B,
@@ -2274,5 +2281,6 @@ static const zueci_u16 zueci_sjis_mb_u[7808] = {
     0x9F66, 0x9F67, 0x9F6C, 0x9F6A, 0x9F77, 0x9F72, 0x9F76, 0x9F95,
     0x9F9C, 0x9FA0, 0x582F, 0x69C7, 0x9059, 0x7464, 0x51DC, 0x7199,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 #endif /* ZUECI_SJIS_H */

@@ -49,9 +49,15 @@ MultiFormatWriter::encode(const std::wstring& contents, int width, int height) c
 		return exec0(std::move(writer));
 	};
 
+	auto exec2 = [&](auto&& writer) {
+		if (_encoding != CharacterSet::Unknown)
+			writer.setEncoding(_encoding);
+		return exec0(std::move(writer));
+	};
+
 	switch (_format) {
 	case BarcodeFormat::Aztec: return exec1(Aztec::Writer(), AztecEccLevel);
-	case BarcodeFormat::DataMatrix: return exec0(DataMatrix::Writer());
+	case BarcodeFormat::DataMatrix: return exec2(DataMatrix::Writer());
 	case BarcodeFormat::PDF417: return exec1(Pdf417::Writer(), Pdf417EccLevel);
 	case BarcodeFormat::QRCode: return exec1(QRCode::Writer(), QRCodeEccLevel);
 	case BarcodeFormat::Codabar: return exec0(OneD::CodabarWriter());
@@ -63,7 +69,7 @@ MultiFormatWriter::encode(const std::wstring& contents, int width, int height) c
 	case BarcodeFormat::ITF: return exec0(OneD::ITFWriter());
 	case BarcodeFormat::UPCA: return exec0(OneD::UPCAWriter());
 	case BarcodeFormat::UPCE: return exec0(OneD::UPCEWriter());
-	default: throw std::invalid_argument(std::string("Unsupported format: ") + ToString(_format));
+	default: throw std::invalid_argument("Unsupported format: " + ToString(_format));
 	}
 }
 

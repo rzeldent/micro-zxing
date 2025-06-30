@@ -136,7 +136,7 @@ void AppendLengthInfo(int numLetters, const Version& version, CodecMode mode, Bi
 {
 	int numBits = CharacterCountBits(mode, version);
 	if (numLetters >= (1 << numBits)) {
-		return throw std::invalid_argument(std::to_string(numLetters) + " is bigger than " + std::to_string((1 << numBits) - 1));
+		throw std::invalid_argument(std::to_string(numLetters) + " is bigger than " + std::to_string((1 << numBits) - 1));
 	}
 	bits.appendBits(numLetters, numBits);
 }
@@ -256,7 +256,7 @@ static bool WillFit(int numInputBits, const Version& version, ErrorCorrectionLev
 	// numBytes = 196
 	int numBytes = version.totalCodewords();
 	// getNumECBytes = 130
-	auto ecBlocks = version.ecBlocksForLevel(ecLevel);
+	auto& ecBlocks = version.ecBlocksForLevel(ecLevel);
 	int numEcBytes = ecBlocks.totalCodewords();
 	// getNumDataBytes = 196 - 130 = 66
 	int numDataBytes = numBytes - numEcBytes;
@@ -267,7 +267,7 @@ static bool WillFit(int numInputBits, const Version& version, ErrorCorrectionLev
 static const Version& ChooseVersion(int numInputBits, ErrorCorrectionLevel ecLevel)
 {
 	for (int versionNum = 1; versionNum <= 40; versionNum++) {
-		const Version* version = Version::VersionForNumber(versionNum);
+		const Version* version = Version::Model2(versionNum);
 		if (WillFit(numInputBits, *version, ecLevel)) {
 			return *version;
 		}
@@ -472,7 +472,7 @@ static const Version& RecommendVersion(ErrorCorrectionLevel ecLevel, CodecMode m
 	// Hard part: need to know version to know how many bits length takes. But need to know how many
 	// bits it takes to know version. First we take a guess at version by assuming version will be
 	// the minimum, 1:
-	int provisionalBitsNeeded = CalculateBitsNeeded(mode, headerBits, dataBits, *Version::VersionForNumber(1));
+	int provisionalBitsNeeded = CalculateBitsNeeded(mode, headerBits, dataBits, *Version::Model2(1));
 	const Version& provisionalVersion = ChooseVersion(provisionalBitsNeeded, ecLevel);
 
 	// Use that guess to calculate the right version. I am still not sure this works in 100% of cases.
@@ -483,10 +483,11 @@ static const Version& RecommendVersion(ErrorCorrectionLevel ecLevel, CodecMode m
 EncodeResult Encode(const std::wstring& content, ErrorCorrectionLevel ecLevel, CharacterSet charset, int versionNumber,
 					bool useGs1Format, int maskPattern)
 {
-	bool charsetWasUnknown = charset == CharacterSet::Unknown;
-	if (charsetWasUnknown) {
+	if (charset == CharacterSet::Unknown) {
 		charset = DEFAULT_BYTE_MODE_ENCODING;
 	}
+
+	bool charsetIsDefault = (charset == DEFAULT_BYTE_MODE_ENCODING);
 
 	// Pick an encoding mode appropriate for the content. Note that this will not attempt to use
 	// multiple modes / segments even if that were more efficient. Twould be nice.
@@ -497,7 +498,7 @@ EncodeResult Encode(const std::wstring& content, ErrorCorrectionLevel ecLevel, C
 	BitArray headerBits;
 
 	// Append ECI segment if applicable
-	if (mode == CodecMode::BYTE && !charsetWasUnknown) {
+	if (mode == CodecMode::BYTE && !charsetIsDefault) {
 		AppendECI(charset, headerBits);
 	}
 
@@ -517,7 +518,7 @@ EncodeResult Encode(const std::wstring& content, ErrorCorrectionLevel ecLevel, C
 
 	const Version* version;
 	if (versionNumber > 0) {
-		version = Version::VersionForNumber(versionNumber);
+		version = Version::Model2(versionNumber);
 		if (version != nullptr) {
 			int bitsNeeded = CalculateBitsNeeded(mode, headerBits, dataBits, *version);
 			if (!WillFit(bitsNeeded, *version, ecLevel)) {
@@ -556,7 +557,7 @@ EncodeResult Encode(const std::wstring& content, ErrorCorrectionLevel ecLevel, C
 	output.version = version;
 
 	//  Choose the mask pattern and set to "qrCode".
-	int dimension = version->dimensionForVersion();
+	int dimension = version->dimension();
 	TritMatrix matrix(dimension, dimension);
 	output.maskPattern = maskPattern != -1 ? maskPattern : ChooseMaskPattern(finalBits, ecLevel, *version, matrix);
 

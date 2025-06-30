@@ -11,50 +11,39 @@
 #include "AZDetector.h"
 #include "AZDetectorResult.h"
 #include "BinaryBitmap.h"
-#include "DecodeHints.h"
+#include "ReaderOptions.h"
 #include "DecoderResult.h"
-#include "Result.h"
+#include "Barcode.h"
 
-#include <memory>
 #include <utility>
 
 namespace ZXing::Aztec {
 
-Result
-Reader::decode(const BinaryBitmap& image) const
+Barcode Reader::decode(const BinaryBitmap& image) const
 {
-	auto binImg = image.getBitMatrix();
-	if (binImg == nullptr)
-		return {};
-
-	DetectorResult detectorResult = Detect(*binImg, _hints.isPure(), _hints.tryHarder());
-	if (!detectorResult.isValid())
-		return {};
-
-	auto decodeResult = Decode(detectorResult).setReaderInit(detectorResult.readerInit()).setIsMirrored(detectorResult.isMirrored());
-
-	return Result(std::move(decodeResult), std::move(detectorResult).position(), BarcodeFormat::Aztec);
+	return FirstOrDefault(decode(image, 1));
 }
 
-Results Reader::decode(const BinaryBitmap& image, int maxSymbols) const
+Barcodes Reader::decode(const BinaryBitmap& image, int maxSymbols) const
 {
 	auto binImg = image.getBitMatrix();
 	if (binImg == nullptr)
 		return {};
+	
+	auto detRess = Detect(*binImg, _opts.isPure(), _opts.tryHarder(), maxSymbols);
 
-	auto detRess = Detect(*binImg, _hints.isPure(), _hints.tryHarder(), maxSymbols);
-
-	Results results;
+	Barcodes res;
 	for (auto&& detRes : detRess) {
-		auto decRes = Decode(detRes).setReaderInit(detRes.readerInit()).setIsMirrored(detRes.isMirrored());
-		if (decRes.isValid(_hints.returnErrors())) {
-			results.emplace_back(std::move(decRes), std::move(detRes).position(), BarcodeFormat::Aztec);
-			if (maxSymbols > 0 && Size(results) >= maxSymbols)
+		auto decRes =
+			Decode(detRes).setReaderInit(detRes.readerInit()).setIsMirrored(detRes.isMirrored()).setVersionNumber(detRes.nbLayers());
+		if (decRes.isValid(_opts.returnErrors())) {
+			res.emplace_back(std::move(decRes), std::move(detRes), BarcodeFormat::Aztec);
+			if (maxSymbols > 0 && Size(res) >= maxSymbols)
 				break;
 		}
 	}
 
-	return results;
+	return res;
 }
 
 } // namespace ZXing::Aztec

@@ -7,7 +7,7 @@
 
 #include "ODCode93Reader.h"
 
-#include "Result.h"
+#include "Barcode.h"
 #include "ZXAlgorithms.h"
 
 #include <array>
@@ -16,7 +16,7 @@
 namespace ZXing::OneD {
 
 // Note that 'abcd' are dummy characters in place of control characters.
-static const char ALPHABET[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%abcd*";
+static constexpr char ALPHABET[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%abcd*";
 
 /**
 * Each character consist of 3 bars and 3 spaces and is 9 modules wide in total.
@@ -25,7 +25,7 @@ static const char ALPHABET[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%abcd*
 * The 9 least-significant bits of each int correspond to the 9 modules in a symbol.
 * Note: bit 9 (the first) is always 1, bit 1 (the last) is always 0.
 */
-static const int CHARACTER_ENCODINGS[] = {
+static constexpr int CHARACTER_ENCODINGS[] = {
 	0x114, 0x148, 0x144, 0x142, 0x128, 0x124, 0x122, 0x150, 0x112, 0x10A, // 0-9
 	0x1A8, 0x1A4, 0x1A2, 0x194, 0x192, 0x18A, 0x168, 0x164, 0x162, 0x134, // A-J
 	0x11A, 0x158, 0x14C, 0x146, 0x12C, 0x116, 0x1B4, 0x1B2, 0x1AC, 0x1A6, // K-T
@@ -34,7 +34,7 @@ static const int CHARACTER_ENCODINGS[] = {
 	0x126, 0x1DA, 0x1D6, 0x132, 0x15E, // Control chars ($)==a, (%)==b, (/)==c, (+)==d, *
 };
 
-static_assert(Size(ALPHABET) - 1 == Size(CHARACTER_ENCODINGS), "table size mismatch");
+static_assert(Size(ALPHABET) == Size(CHARACTER_ENCODINGS), "table size mismatch");
 
 static const int ASTERISK_ENCODING = 0x15E;
 
@@ -62,7 +62,7 @@ CheckChecksums(const std::string& result)
 }
 
 // forward declare here. see ODCode39Reader.cpp. Not put in header to not pollute the public facing API
-bool DecodeExtendedCode39AndCode93(std::string& encoded, const char ctrl[4]);
+std::string DecodeCode39AndCode93FullASCII(std::string encoded, const char ctrl[4]);
 
 constexpr int CHAR_LEN = 6;
 constexpr int CHAR_SUM = 9;
@@ -80,7 +80,7 @@ static bool IsStartGuard(const PatternView& window, int spaceInPixel)
 		   RowReader::OneToFourBitPattern<CHAR_LEN, CHAR_SUM>(window) == ASTERISK_ENCODING;
 }
 
-Result Code93Reader::decodePattern(int rowNumber, PatternView& next, std::unique_ptr<DecodingState>&) const
+Barcode Code93Reader::decodePattern(int rowNumber, PatternView& next, std::unique_ptr<DecodingState>&) const
 {
 	// minimal number of characters that must be present (including start, stop, checksum and 1 payload characters)
 	int minCharCount = 5;
@@ -121,14 +121,14 @@ Result Code93Reader::decodePattern(int rowNumber, PatternView& next, std::unique
 	// Remove checksum digits
 	txt.resize(txt.size() - 2);
 
-	if (!error && !DecodeExtendedCode39AndCode93(txt, "abcd"))
-		error = FormatError("Decoding extended Code39/Code93 failed");
+	if (!error && (txt = DecodeCode39AndCode93FullASCII(txt, "abcd")).empty())
+		error = FormatError("ASCII decoding of Code93 failed");
 
 	// Symbology identifier ISO/IEC 15424:2008 4.4.10 no modifiers
 	SymbologyIdentifier symbologyIdentifier = {'G', '0'};
 
 	int xStop = next.pixelsTillEnd();
-	return Result(txt, rowNumber, xStart, xStop, BarcodeFormat::Code93, symbologyIdentifier, error);
+	return Barcode(txt, rowNumber, xStart, xStop, BarcodeFormat::Code93, symbologyIdentifier, error);
 }
 
 } // namespace ZXing::OneD

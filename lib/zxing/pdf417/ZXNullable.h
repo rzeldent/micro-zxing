@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <stdexcept>
 #include <utility>
 
@@ -19,7 +20,7 @@ class Nullable final
 public:
 	Nullable() = default;
 	Nullable(const T &value) : m_hasValue(true), m_value(value) {}
-	Nullable(T &&value) : m_hasValue(true), m_value(std::move(value)) {}
+	Nullable(T &&value) noexcept : m_hasValue(true), m_value(std::move(value)) {}
 	Nullable(std::nullptr_t) {}
 	
 	Nullable<T> & operator=(const T &value) {
@@ -28,7 +29,7 @@ public:
 		return *this;
 	}
 
-	Nullable<T> & operator=(T &&value) {
+	Nullable<T> & operator=(T &&value) noexcept {
 		m_hasValue = true;
 		m_value = std::move(value);
 		return *this;

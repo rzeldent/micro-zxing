@@ -9,6 +9,7 @@
 #ifndef ZUECI_KSX1001_H
 #define ZUECI_KSX1001_H
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode usage bit-flags for URO (U+4E00-U+9FFF) block */
 static const zueci_u16 zueci_ksx1001_uro_u[1306] = {
     0x2F8B, 0x4372, 0x2000, 0x0B04, 0xE82C, 0xE340, 0x2800, 0x40C8,
@@ -344,7 +345,9 @@ static const zueci_u16 zueci_ksx1001_uro_mb_ind[1306] = {
      5489,  5492,  5493,  5494,  5495,  5498,  5500,  5504,
      5505,  5506,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode codepoints sorted */
 static const zueci_u16 zueci_ksx1001_u_u[3607] = {
     0x00A1, 0x00A4, 0x00A7, 0x00A8, 0x00AA, 0x00AD, 0x00AE, 0x00B0,
@@ -799,7 +802,9 @@ static const zueci_u16 zueci_ksx1001_u_u[3607] = {
     0xFF56, 0xFF57, 0xFF58, 0xFF59, 0xFF5A, 0xFF5B, 0xFF5C, 0xFF5D,
     0xFF5E, 0xFFE0, 0xFFE1, 0xFFE2, 0xFFE3, 0xFFE5, 0xFFE6,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Multibyte values sorted in Unicode order */
 static const zueci_u16 zueci_ksx1001_u_mb[8227] = {
     0xA2AE, 0xA2B4, 0xA1D7, 0xA1A7, 0xA8A3, 0xA1A9, 0xA2E7, 0xA1C6,
@@ -1832,7 +1837,9 @@ static const zueci_u16 zueci_ksx1001_u_mb[8227] = {
     0xA3FA, 0xA3FB, 0xA3FC, 0xA3FD, 0xA2A6, 0xA1CB, 0xA1CC, 0xA1FE,
     0xA3FE, 0xA1CD, 0xA3DC,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Indexes into Unicode `zueci_ksx1001_u_u[]` array in blocks of 0x100 */
 static const zueci_u16 zueci_ksx1001_u_ind[256] = {
         0,    50,    50,    73,   171,   171,   171,   171,
@@ -1868,7 +1875,9 @@ static const zueci_u16 zueci_ksx1001_u_ind[256] = {
      3239,  3239,  3239,  3239,  3239,  3239,  3239,  3239,
      3239,  3400,  3507,  3507,  3507,  3507,  3507,  3601,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Unicode values in multibyte order */
 static const zueci_u16 zueci_ksx1001_mb_u[8366] = {
     0x3000, 0x3001, 0x3002, 0x00B7, 0x2025, 0x2026, 0x00A8, 0x3003,
@@ -2918,5 +2927,6 @@ static const zueci_u16 zueci_ksx1001_mb_u[8366] = {
     0x5E0C, 0x6199, 0x6198, 0x6231, 0x665E, 0x66E6, 0x7199, 0x71B9,
     0x71BA, 0x72A7, 0x79A7, 0x7A00, 0x7FB2, 0x8A70,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 #endif /* ZUECI_KSX1001_H */

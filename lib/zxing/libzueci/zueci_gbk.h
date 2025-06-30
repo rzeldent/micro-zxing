@@ -9,6 +9,7 @@
 #ifndef ZUECI_GBK_H
 #define ZUECI_GBK_H
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode usage bit-flags for URO (U+4E00-U+9FFF) block */
 static const zueci_u16 zueci_gbk_uro_u[1307] = {
     0x8074, 0x8084, 0xC24B, 0x10AA, 0x0457, 0x0CA2, 0xFDBC, 0xBFF4,
@@ -344,7 +345,9 @@ static const zueci_u16 zueci_gbk_uro_mb_ind[1307] = {
     14143, 14156, 14168, 14180, 14191, 14206, 14220, 14236,
     14251, 14256, 14268,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode codepoints sorted */
 static const zueci_u16 zueci_gbk_u_u[209] = {
     0x00B7, 0x0144, 0x0148, 0x0251, 0x0261, 0x02CA, 0x02CB, 0x02D9,
@@ -375,7 +378,9 @@ static const zueci_u16 zueci_gbk_u_u[209] = {
     0xFE64, 0xFE65, 0xFE66, 0xFE68, 0xFE69, 0xFE6A, 0xFE6B, 0xFFE2,
     0xFFE4,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Multibyte values sorted in Unicode order */
 static const zueci_u16 zueci_gbk_u_mb[14348] = {
     0xA1A4, 0xA8BD, 0xA8BE, 0xA8BB, 0xA8C0, 0xA840, 0xA841, 0xA842,
@@ -2173,7 +2178,9 @@ static const zueci_u16 zueci_gbk_u_mb[14348] = {
     0xA97E, 0xA980, 0xA981, 0xA982, 0xA983, 0xA984, 0xA985, 0xA986,
     0xA987, 0xA988, 0xA956, 0xA957,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Unicode values in multibyte order */
 static const zueci_u16 zueci_gbk_mb_u[14352] = {
     0x4E02, 0x4E04, 0x4E05, 0x4E06, 0x4E0F, 0x4E12, 0x4E17, 0x4E1F,
@@ -3971,7 +3978,9 @@ static const zueci_u16 zueci_gbk_mb_u[14352] = {
     0xFA0C, 0xFA0D, 0xFA0E, 0xFA0F, 0xFA11, 0xFA13, 0xFA14, 0xFA18,
     0xFA1F, 0xFA20, 0xFA21, 0xFA23, 0xFA24, 0xFA27, 0xFA28, 0xFA29,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Non-URO multibyte values in multibyte order */
 static const zueci_u16 zueci_gbk_nonuro_mb[209] = {
     0xA1A4, 0xA1AA, 0xA2A1, 0xA2A2, 0xA2A3, 0xA2A4, 0xA2A5, 0xA2A6,
@@ -4033,5 +4042,6 @@ static const zueci_u16 zueci_gbk_nonuro_u[209] = {
     0xFA18, 0xFA1F, 0xFA20, 0xFA21, 0xFA23, 0xFA24, 0xFA27, 0xFA28,
     0xFA29,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 #endif /* ZUECI_GBK_H */

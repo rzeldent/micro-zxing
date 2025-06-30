@@ -9,6 +9,7 @@
 #ifndef ZUECI_BIG5_H
 #define ZUECI_BIG5_H
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode usage bit-flags for URO (U+4E00-U+9FFF) block */
 static const zueci_u16 zueci_big5_uro_u[1307] = {
     0xFF8B, 0xC373, 0x6840, 0x1B0F, 0xE9AC, 0xF34C, 0x0200, 0xC008,
@@ -344,7 +345,9 @@ static const zueci_u16 zueci_big5_uro_mb_ind[1307] = {
     13458, 13466, 13477, 13490, 13502, 13516, 13528, 13540,
     13552, 13553, 13560,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Unicode codepoints sorted */
 static const zueci_u16 zueci_big5_u_u[642] = {
     0x00A2, 0x00A3, 0x00A5, 0x00A7, 0x00B0, 0x00B1, 0x00B7, 0x00D7,
@@ -429,7 +432,9 @@ static const zueci_u16 zueci_big5_u_u[642] = {
     0xFF55, 0xFF56, 0xFF57, 0xFF58, 0xFF59, 0xFF5A, 0xFF5B, 0xFF5C,
     0xFF5D, 0xFF64,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_ECI
 /* Multibyte values sorted in Unicode order */
 static const zueci_u16 zueci_big5_u_mb[13703] = {
     0xA246, 0xA247, 0xA244, 0xA1B1, 0xA258, 0xA1D3, 0xA150, 0xA1D1,
@@ -2146,7 +2151,9 @@ static const zueci_u16 zueci_big5_u_mb[13703] = {
     0xA2F8, 0xA2F9, 0xA2FA, 0xA2FB, 0xA2FC, 0xA2FD, 0xA2FE, 0xA340,
     0xA341, 0xA342, 0xA343, 0xA161, 0xA155, 0xA162, 0xA14E,
 };
+#endif /* ZUECI_EMBED_NO_TO_ECI */
 
+#ifndef ZUECI_EMBED_NO_TO_UTF8
 /* Unicode values in multibyte order */
 static const zueci_u16 zueci_big5_mb_u[13775] = {
     0x3000, 0xFF0C, 0x3001, 0x3002, 0xFF0E, 0x2022, 0xFF1B, 0xFF1A,
@@ -3872,5 +3879,6 @@ static const zueci_u16 zueci_big5_mb_u[13775] = {
     0x864B, 0x8B9F, 0x9483, 0x9C79, 0x9EB7, 0x7675, 0x9A6B, 0x9C7A,
     0x9E1D, 0x7069, 0x706A, 0x9EA4, 0x9F7E, 0x9F49, 0x9F98,
 };
+#endif /* ZUECI_EMBED_NO_TO_UTF8 */
 
 #endif /* ZUECI_BIG5_H */

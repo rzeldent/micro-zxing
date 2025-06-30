@@ -5,6 +5,8 @@
 
 #include "ODDataBarCommon.h"
 
+#include <cmath>
+
 namespace ZXing::OneD::DataBar {
 
 static int combins(int n, int r)
@@ -34,7 +36,7 @@ static int combins(int n, int r)
 	return val;
 }
 
-int GetValue(const Array4I& widths, int maxWidth, bool noNarrow)
+int GetValue(ArrayView<int> widths, int maxWidth, bool noNarrow)
 {
 	int elements = Size(widths);
 	int n = Reduce(widths);
@@ -63,18 +65,19 @@ int GetValue(const Array4I& widths, int maxWidth, bool noNarrow)
 	return val;
 }
 
-template <typename T>
-struct OddEven
-{
-	T odd = {}, evn = {};
-	T& operator[](int i) { return i & 1 ? evn : odd; }
-};
-
 using Array4F = std::array<float, 4>;
 
 bool ReadDataCharacterRaw(const PatternView& view, int numModules, bool reversed, Array4I& oddPattern,
 						  Array4I& evnPattern)
 {
+#if 1
+	auto pattern = NormalizedPatternFromE2E<8>(view, numModules, reversed);
+	OddEven<Array4I&> res = {oddPattern, evnPattern};
+
+	for (int i = 0; i < Size(pattern); ++i)
+		res[i % 2][i / 2] = pattern[i];
+
+#else
 	OddEven<Array4I&> res = {oddPattern, evnPattern};
 	OddEven<Array4F> rem;
 
@@ -87,6 +90,7 @@ bool ReadDataCharacterRaw(const PatternView& view, int numModules, bool reversed
 		res[i % 2][i / 2] = int(v + .5f);
 		rem[i % 2][i / 2] = v - res[i % 2][i / 2];
 	}
+#endif
 
 	// DataBarExpanded data character is 17 modules wide
 	// DataBar outer   data character is 16 modules wide
@@ -144,10 +148,16 @@ bool ReadDataCharacterRaw(const PatternView& view, int numModules, bool reversed
 #endif
 }
 
+static bool IsStacked(const Pair& first, const Pair& last)
+{
+	// check if we see two halfes that are far away from each other in y or overlapping in x
+	return std::abs(first.y - last.y) > (first.xStop - first.xStart) || last.xStart < (first.xStart + first.xStop) / 2;
+}
+
 Position EstimatePosition(const Pair& first, const Pair& last)
 {
-	if (first.y == last.y)
-		return Line(first.y, first.xStart, last.xStop);
+	if (!IsStacked(first, last))
+		return Line((first.y + last.y) / 2, first.xStart, last.xStop);
 	else
 		return Position{{first.xStart, first.y}, {first.xStop, first.y}, {last.xStop, last.y}, {last.xStart, last.y}};
 }
@@ -155,7 +165,7 @@ Position EstimatePosition(const Pair& first, const Pair& last)
 int EstimateLineCount(const Pair& first, const Pair& last)
 {
 	// see incrementLineCount() in ODReader.cpp for the -1 here
-	return std::min(first.count, last.count) * ((first.y == last.y) ? 1 : 2) - 1;
+	return std::min(first.count, last.count) - 1 + IsStacked(first, last);
 }
 
 } // namespace ZXing::OneD::DataBar
