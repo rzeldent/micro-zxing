@@ -11,3 +11,9 @@ Additional steps to update the library:
 
 - Updated version.h manually because there is no project preprocessing
 - removed libzint directory (stibs) because is not used and caused compile error
+
+## Usage with ESP-IDF
+
+Simply this project as a dependency:
+
+    idf.py add-dependency --git https://github.com/rzeldent/micro-zxing.git micro-zxing
