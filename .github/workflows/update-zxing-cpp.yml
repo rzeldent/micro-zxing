@@ -1,0 +1,95 @@
+name: Update zxing-cpp submodule
+
+on:
+  schedule:
+    # Weekly, Monday 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch: # or trigger manually from the Actions tab
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Bump zxing-cpp to latest tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with submodules
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Current pinned submodule commit
+        id: current
+        run: |
+          echo "sha=$(git ls-files --stage lib/zxing/src | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Find latest upstream tag
+        id: latest
+        run: |
+          cd lib/zxing/src
+          git fetch --tags --force --quiet
+          latest=$(git tag --sort=-v:refname | grep -v -- '-' | head -n1)
+          echo "tag=$latest" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse "$latest")" >> "$GITHUB_OUTPUT"
+          echo "current_tag=$(git describe --tags "${{ steps.current.outputs.sha }}" 2>/dev/null || echo unknown)" >> "$GITHUB_OUTPUT"
+          cd ../..
+
+      - name: Update submodule and version metadata
+        id: update
+        if: steps.latest.outputs.sha != steps.current.outputs.sha
+        run: |
+          cd lib/zxing/src
+          git checkout "${{ steps.latest.outputs.tag }}"
+          cd ../..
+          git add lib/zxing/src
+          python3 tools/bump_zxing_version.py "${{ steps.latest.outputs.tag }}"
+
+      - name: Cache PlatformIO
+        if: steps.latest.outputs.sha != steps.current.outputs.sha
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Build check (best effort)
+        id: build
+        if: steps.latest.outputs.sha != steps.current.outputs.sha
+        run: |
+          python3 -m pip install --quiet platformio
+          if platformio run; then
+            echo "status=SUCCESS" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=FAILED" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request
+        if: steps.latest.outputs.sha != steps.current.outputs.sha
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update zxing-cpp to ${{ steps.latest.outputs.tag }}"
+          branch: "update/zxing-cpp-${{ steps.latest.outputs.tag }}"
+          delete-branch: true
+          title: "Update zxing-cpp to ${{ steps.latest.outputs.tag }}"
+          body: |
+            Automated update of the zxing-cpp git submodule.
+
+            - Current: `${{ steps.current.outputs.sha }}` (${{ steps.latest.outputs.current_tag }})
+            - New: `${{ steps.latest.outputs.tag }}` (${{ steps.latest.outputs.sha }})
+
+            Build check: **${{ steps.build.outputs.status }}**
+
+            Version metadata in `lib/zxing/library.json`, `lib/zxing/Version.h` and
+            `lib/library.json` was bumped by `tools/bump_zxing_version.py`.
+
+            > If the build fails, check:
+            > - C++ standard in `platformio.ini` (upstream v3+ core requires C++20; the
+            >   script bumps `-std=gnu++17` → `-std=gnu++20` for major ≥ 3)
+            > - API changes in `src/main.cpp` (`DecodeHints`→`ReaderOptions`,
+            >   `Result`→`Barcode` on newer releases)
+            > - new `dynamic_cast`/RTTI usage (keep `-frtti` in `build_flags`)

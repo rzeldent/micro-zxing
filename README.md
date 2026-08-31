@@ -31,13 +31,22 @@ git commit -m "Update zxing-cpp to vX.Y.Z"
 
 Then:
 
-1. Bump the version in `lib/zxing/library.json` and `lib/zxing/Version.h`.
+1. Bump the version in `lib/zxing/library.json` and `lib/zxing/Version.h`
+   (or run `python tools/bump_zxing_version.py X.Y.Z`, which also updates
+   `lib/library.json` and bumps the C++ standard to C++20 for v3+).
 2. Build: `platformio run`. Watch for:
    - new/changed API in `src/main.cpp` (e.g. `DecodeHints` → `ReaderOptions`,
      `Result` → `Barcode` on newer releases),
    - the C++ standard in `platformio.ini` (upstream ≥ v3.0 requires C++20),
    - new RTTI/`dynamic_cast` usage (enable with `-frtti` in `build_flags`).
 3. The GitHub Action CI checks out submodules automatically (`submodules: 'true'`).
+
+### Automated updates
+
+The workflow `.github/workflows/update-zxing-cpp.yml` runs weekly (and can be run
+manually from the Actions tab). When upstream publishes a new tag it updates the
+submodule, bumps the version metadata via `tools/bump_zxing_version.py`, runs a
+build check and opens a pull request with the build status in the description.
 
 > Note: the pre-build script leaves `lib/zxing/src/core/src/Version.h` as an
 > untracked file inside the submodule, so `git submodule status` may show the
