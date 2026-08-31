@@ -48,6 +48,7 @@ manually from the Actions tab). When upstream publishes a new tag it updates the
 submodule, bumps the version metadata via `tools/bump_zxing_version.py`, runs a
 build check and opens a pull request with the build status in the description.
 
-> Note: the pre-build script leaves `lib/zxing/src/core/src/Version.h` as an
-> untracked file inside the submodule, so `git submodule status` may show the
-> submodule as having untracked content. That is expected and harmless.
+> The `Version.h` shim is provided via the include path (`tools/gen_zxing_version.py`
+> adds `lib/zxing` to `CPPPATH`); nothing is ever written into `lib/zxing/src`, so
+> the submodule stays pristine. Don't commit files inside the submodule — CI only
+> fetches the commit pinned in the superproject, so local-only commits break it.
