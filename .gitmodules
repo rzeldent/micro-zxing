@@ -1,4 +1,4 @@
 [submodule "lib/zxing/src"]
 	path = lib/zxing/src
 	url = https://github.com/zxing-cpp/zxing-cpp.git
-	branch = v2.3.0
+	branch = v3.1.1
