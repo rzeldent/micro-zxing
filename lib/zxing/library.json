@@ -1,5 +1,21 @@
 {
     "name": "zxing",
     "version": "2.3.0",
-    "description": "Wrapper for ZXing-C++ library"
+    "description": "Thin PlatformIO wrapper for the zxing-cpp git submodule (lib/zxing/src/core/src)",
+    "keywords": "barcode, zxing, qr, aztec, datamatrix, pdf417, code128",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/zxing-cpp/zxing-cpp.git"
+    },
+    "license": "Apache-2.0",
+    "frameworks": "*",
+    "platforms": "*",
+    "build": {
+        "srcDir": "src/core/src",
+        "includeDir": "src/core/src",
+        "srcFilter": [
+            "+<*>",
+            "-<libzint>"
+        ]
+    }
 }

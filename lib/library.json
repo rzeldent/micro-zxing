@@ -1,11 +1,11 @@
 {
     "name": "micro-zxing",
     "version": "2.3.0",
-    "description": "",
-    "keywords": "",
+    "description": "ZXing barcode library wrapper for the ESP32-CAM (zinc: zxing-cpp git submodule)",
+    "keywords": "barcode, zxing, qr, esp32, camera",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/rzeldent/micro-zxing.git"
     },
     "authors": [
         {
