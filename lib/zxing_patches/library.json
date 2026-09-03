@@ -1,0 +1,17 @@
+{
+  "name": "zxing_patches",
+  "version": "3.1.1",
+  "description": "ESP32 (xtensa/newlib) portability fixes for the pristine zxing-cpp submodule sources (lib/zxing). Each file here shadows the upstream .cpp with the same relative path; the upstream original is excluded from the zxing_cpp build and this patched copy is compiled instead.",
+  "license": "Apache-2.0",
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "srcDir": ".",
+    "flags": [
+      "-DZXING_INTERNAL",
+      "-DZUECI_EMBED_NO_TO_ECI",
+      "-I lib/zxing/core/src",
+      "-I lib/zxing_platformio"
+    ]
+  }
+}

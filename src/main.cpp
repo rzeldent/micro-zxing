@@ -2,6 +2,7 @@
 #include <camera_config.h>
 
 #include <ReadBarcode.h>
+#include <ZXAlgorithms.h> // ToHex()
 
 esp_err_t camera_init_result;
 
@@ -36,26 +37,31 @@ void loop()
   if (camera_init_result != ESP_OK)
     return;
 
-  auto hints = ZXing::DecodeHints()
-                   .setFormats(ZXing::BarcodeFormat::Any)
-                   .setMaxNumberOfSymbols(1)
-                   .setTryRotate(true)
-                   .setTryHarder(true);
+  auto options = ZXing::ReaderOptions()
+                     .setFormats(ZXing::BarcodeFormat::All)
+                     .setMaxNumberOfSymbols(1)
+                     .setTryRotate(true)
+                     .setTryHarder(true);
 
   auto fb = esp_camera_fb_get();
   ZXing::ImageView image(fb->buf, fb->width, fb->height, ZXing::ImageFormat::Lum);
-  auto results = ZXing::ReadBarcodes(image, hints);
+  auto results = ZXing::ReadBarcodes(image, options);
   esp_camera_fb_return(fb);
 
   for (auto const &result : results)
   {
     log_i("Text:       \"%s\"", result.text().c_str());
-    log_i("Bytes:      %s", ZXing::ToHex(hints.textMode() == ZXing::TextMode::ECI ? result.bytesECI() : result.bytes()).c_str());
+    log_i("Bytes:      %s", ZXing::ToHex(options.textMode() == ZXing::TextMode::ECI ? result.bytesECI() : result.bytes()).c_str());
     log_i("Format:     %s", ZXing::ToString(result.format()).c_str());
     log_i("Identifier: %s", result.symbologyIdentifier().c_str());
     log_i("Content:    %s", ToString(result.contentType()).c_str());
     log_i("HasECI:     %d", result.hasECI());
-    log_i("Position:   %d", result.position());
+    auto pos = result.position();
+    log_i("Position:   TL=(%d,%d) TR=(%d,%d) BR=(%d,%d) BL=(%d,%d)",
+          pos.topLeft().x, pos.topLeft().y,
+          pos.topRight().x, pos.topRight().y,
+          pos.bottomRight().x, pos.bottomRight().y,
+          pos.bottomLeft().x, pos.bottomLeft().y);
     log_i("Rotation:   %d deg", result.orientation());
     log_i("IsMirrored: %d", result.isMirrored());
     log_i("IsInverted: %d", result.isInverted());

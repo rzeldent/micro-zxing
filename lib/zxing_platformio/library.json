@@ -1,0 +1,54 @@
+{
+  "name": "zxing_cpp",
+  "version": "3.1.1",
+  "description": "PlatformIO glue to build the ZXing-C++ (zxing-cpp) library from the lib/zxing git submodule (readers only, upstream defaults). Sources are compiled from lib/zxing/core/src.",
+  "keywords": "barcode, qrcode, reader, zxing",
+  "license": "Apache-2.0",
+  "frameworks": "*",
+  "platforms": "*",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zxing-cpp/zxing-cpp"
+  },
+  "build": {
+    "srcDir": "../zxing/core/src",
+    "includeDir": ".",
+    "srcFilter": [
+      "+<*>",
+      "-<libzint>",
+      "-<TextEncoder.cpp>",
+      "-<MultiFormatWriter.cpp>",
+      "-<aztec/AZDecoder.cpp>",
+      "-<aztec/AZEncoder.cpp>",
+      "-<aztec/AZHighLevelEncoder.cpp>",
+      "-<aztec/AZToken.cpp>",
+      "-<aztec/AZWriter.cpp>",
+      "-<datamatrix/DMECEncoder.cpp>",
+      "-<datamatrix/DMHighLevelEncoder.cpp>",
+      "-<datamatrix/DMSymbolInfo.cpp>",
+      "-<datamatrix/DMWriter.cpp>",
+      "-<oned/ODCodabarWriter.cpp>",
+      "-<oned/ODCode39Writer.cpp>",
+      "-<oned/ODCode93Writer.cpp>",
+      "-<oned/ODCode128Writer.cpp>",
+      "-<oned/ODDXFilmEdgeReader.cpp>",
+      "-<oned/ODEAN8Writer.cpp>",
+      "-<oned/ODEAN13Writer.cpp>",
+      "-<oned/ODITFWriter.cpp>",
+      "-<oned/ODUPCEWriter.cpp>",
+      "-<oned/ODUPCAWriter.cpp>",
+      "-<oned/ODWriterHelper.cpp>",
+      "-<pdf417/PDFEncoder.cpp>",
+      "-<pdf417/PDFHighLevelEncoder.cpp>",
+      "-<pdf417/PDFWriter.cpp>",
+      "-<qrcode/QREncoder.cpp>",
+      "-<qrcode/QRMaskUtil.cpp>",
+      "-<qrcode/QRMatrixUtil.cpp>",
+      "-<qrcode/QRWriter.cpp>"
+    ],
+    "flags": [
+      "-DZXING_INTERNAL",
+      "-DZUECI_EMBED_NO_TO_ECI"
+    ]
+  }
+}
