@@ -37,8 +37,8 @@ void setup()
   if (camera_config.fb_location == CAMERA_FB_IN_PSRAM && !psramInit())
     log_e("Failed to initialize PSRAM");
 
-    // Only allow JPG as raw takes too much bandwith
-      assert(camera_config.pixel_format == PIXFORMAT_JPEG);
+  // Only allow JPG as raw takes too much bandwith
+  assert(camera_config.pixel_format == PIXFORMAT_JPEG);
 
   camera_init_result = esp_camera_init(&camera_config);
   if (camera_init_result != ESP_OK)
@@ -65,7 +65,6 @@ void loop()
   }
 
   log_i("Captured JPEG image! Buffer size: %d bytes", fb->len);
-
   uint8_t *rgb_buffer = nullptr;
   size_t rgb_len;
   if (!frame2bmp(fb, &rgb_buffer, &rgb_len))
