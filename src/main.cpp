@@ -44,9 +44,17 @@ void loop()
                      .setTryHarder(true);
 
   auto fb = esp_camera_fb_get();
+  if (!fb)
+  {
+    log_e("Camera capture failed");
+    return;
+  }
+
   ZXing::ImageView image(fb->buf, fb->width, fb->height, ZXing::ImageFormat::Lum);
   auto results = ZXing::ReadBarcodes(image, options);
   esp_camera_fb_return(fb);
+
+  log_i("Found %d barcodes", results.size());
 
   for (auto const &result : results)
   {

@@ -1,7 +1,7 @@
 {
     "name": "micro-zxing",
     "version": "3.1.1",
-    "description": "ZXing-C++ barcode reader for ESP32, built from the zxing-cpp git submodule (readers-only).",
+    "description": "ZXing-C++ barcode reader for ESP32, built from the zxing-cpp git submodule (readers-only). See https://github.com/zxing-cpp/zxing-cpp",
     "keywords": "barcode, qrcode, qr, datamatrix, aztec, pdf417, maxicode, reader, esp32",
     "repository": {
         "type": "git",
