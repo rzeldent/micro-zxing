@@ -16,7 +16,9 @@ void setup()
 
   camera_config_t camera_config;
   memcpy(&camera_config, &esp32cam_aithinker_settings, sizeof(camera_config_t));
+
   camera_config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  camera_config.fb_count = 1;
   camera_config.frame_size = framesize_t::FRAMESIZE_SVGA;
   camera_config.pixel_format = pixformat_t::PIXFORMAT_GRAYSCALE;
 
@@ -43,9 +45,17 @@ void loop()
                    .setTryHarder(true);
 
   auto fb = esp_camera_fb_get();
+  if (!fb)
+  {
+    log_e("Camera capture failed");
+    return;
+  }
+  
   ZXing::ImageView image(fb->buf, fb->width, fb->height, ZXing::ImageFormat::Lum);
   auto results = ZXing::ReadBarcodes(image, hints);
   esp_camera_fb_return(fb);
+
+  log_i("Found %d barcodes", results.size());
 
   for (auto const &result : results)
   {
