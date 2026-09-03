@@ -21,6 +21,23 @@ ZXing Zebra crossing barcode library for the ESP32, built from the original
 * [`CMakeLists.txt`](CMakeLists.txt) — ESP-IDF component wrapper (same readers-only config and
   patch overlay as PlatformIO).
 
+## Getting the source
+
+[`lib/zxing`](lib/zxing) is a git submodule (and itself pulls in the nested
+`zint` submodule), so a fresh clone must fetch those submodules too. Either
+clone recursively:
+
+    git clone --recurse-submodules https://github.com/rzeldent/micro-zxing.git
+
+or initialize the submodules after an existing (plain) clone:
+
+    git clone https://github.com/rzeldent/micro-zxing.git
+    cd micro-zxing
+    git submodule update --init --recursive
+
+If `lib/zxing` is left empty, the PlatformIO and ESP-IDF builds will fail because
+the ZXing-C++ sources live inside it.
+
 ## Usage with ESP-IDF
 
 Simply add this project as a dependency:
