@@ -33,8 +33,10 @@ constexpr camera_config_t esp32cam_settings = {
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,
-    .fb_count = 2};
+    .jpeg_quality = 2,
+    .fb_count = 2,
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY};
 
 constexpr camera_config_t esp32cam_aithinker_settings = {
     .pin_pwdn = 32,
@@ -58,8 +60,10 @@ constexpr camera_config_t esp32cam_aithinker_settings = {
     .ledc_channel = LEDC_CHANNEL_1,
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,
-    .fb_count = 2};
+    .jpeg_quality = 2,
+    .fb_count = 2,
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY};
 
 constexpr camera_config_t esp32cam_ttgo_t_settings = {
     .pin_pwdn = 26,
@@ -83,8 +87,10 @@ constexpr camera_config_t esp32cam_ttgo_t_settings = {
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,
-    .fb_count = 2};
+    .jpeg_quality = 2,
+    .fb_count = 2,
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY};
 
 constexpr camera_config_t esp32cam_m5stack_settings = {
     .pin_pwdn = -1,
@@ -108,8 +114,10 @@ constexpr camera_config_t esp32cam_m5stack_settings = {
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,
-    .fb_count = 2};
+    .jpeg_quality = 2,
+    .fb_count = 2,
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY};
 
 constexpr camera_config_t esp32cam_wrover_kit_settings = {
     .pin_pwdn = -1,
@@ -133,23 +141,7 @@ constexpr camera_config_t esp32cam_wrover_kit_settings = {
     .ledc_channel = LEDC_CHANNEL_0,
     .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_SVGA,
-    .jpeg_quality = 12,
-    .fb_count = 2};
-
-constexpr const camera_config_entry_t camera_configs[] = {
-
-    {"ESP32CAM", esp32cam_settings},
-    {"AI THINKER", esp32cam_aithinker_settings},
-    {"TTGO T-CAM", esp32cam_ttgo_t_settings},
-    {"M5 STACK", esp32cam_m5stack_settings},
-    {"WROVER KIT", esp32cam_wrover_kit_settings}};
-
-const camera_config_t lookup_camera_config(const char *pin)
-{
-    // Lookup table for the frame name to framesize_t
-    for (const auto &entry : camera_configs)
-        if (strncmp(entry.name, pin, sizeof(camera_config_name_t)) == 0)
-            return entry.config;
-
-    return camera_config_t{};
-}
+    .jpeg_quality = 2,
+    .fb_count = 2,
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY};
